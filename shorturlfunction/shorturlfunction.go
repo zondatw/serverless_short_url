@@ -7,7 +7,10 @@ import (
 	"hash/crc32"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
+	"strings"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -48,17 +51,17 @@ func initializeRedis() (*redis.Pool, error) {
 }
 
 // conertToShort use crc32 to get short hash
-func convertToShort(original_url string) string {
-	return fmt.Sprintf("%x%x", crc32.ChecksumIEEE([]byte(original_url+"AABBCCDD")), crc32.ChecksumIEEE([]byte(original_url+"ZZXXYYWW")))
+func convertToShort(originalUrl string) string {
+	return fmt.Sprintf("%x%x", crc32.ChecksumIEEE([]byte(originalUrl+"AABBCCDD")), crc32.ChecksumIEEE([]byte(originalUrl+"ZZXXYYWW")))
 }
 
 // Register set new url on redis instance
 // and return short url path
-func Register(rw http.ResponseWriter, req *http.Request) {
+func Register(res http.ResponseWriter, req *http.Request) {
 	shortUrlBase := os.Getenv("SHORTURLBASE")
 	if shortUrlBase == "" {
 		log.Printf("initializeEnvs: SHORTURLBASE must be set")
-		http.Error(rw, "Error initializing base url", http.StatusInternalServerError)
+		http.Error(res, "Error initializing base url", http.StatusInternalServerError)
 		return
 	}
 
@@ -69,7 +72,7 @@ func Register(rw http.ResponseWriter, req *http.Request) {
 		redisPool, err = initializeRedis()
 		if err != nil {
 			log.Printf("initializeRedis: %v", err)
-			http.Error(rw, "Error initializing connection pool", http.StatusInternalServerError)
+			http.Error(res, "Error initializing connection pool", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -82,27 +85,69 @@ func Register(rw http.ResponseWriter, req *http.Request) {
 	var rg registerRequestStruct
 	if err := decoder.Decode(&rg); err != nil {
 		log.Printf("Parse Register request error: %v", err)
-		http.Error(rw, "Error parsing register request", http.StatusBadRequest)
+		http.Error(res, "Error parsing register request", http.StatusBadRequest)
 		return
 	}
 
 	// Get short url
 	var rgw registerResponseStruct
 	shortHash := convertToShort(rg.Url)
-	rgw.Url = shortUrlBase + shortHash
+
+	if u, err := url.Parse(shortUrlBase); err != nil {
+		log.Printf("SHORTURLBASE value: %v", err)
+		http.Error(res, "Error SHORTURLBASE", http.StatusInternalServerError)
+		return
+	} else {
+		u.Path = path.Join(u.Path, shortHash)
+		rgw.Url = u.String()
+	}
 
 	// Store to redis
 	redisConn.Send("MULTI")
-	redisConn.Send("SET", rg.Url, rgw.Url)
+	redisConn.Send("SET", shortHash, rg.Url)
 	redisConn.Send("EXPIRE", rg.Url, 30*24*60*60) // expire 30 days
 
 	if _, err := redisConn.Do("EXEC"); err != nil {
 		log.Printf("Store short url to redis: %v", err)
-		http.Error(rw, "Error storing data to redis", http.StatusInternalServerError)
+		http.Error(res, "Error storing data to redis", http.StatusInternalServerError)
 		return
 	}
 
 	// Set response block
-	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(rgw)
+	res.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(res).Encode(rgw)
+}
+
+// Redirect direct user to other site with short url path
+func Redirect(res http.ResponseWriter, req *http.Request) {
+	// Initialize connection pool on first invocation
+	if redisPool == nil {
+		// Pre-declare err to avoid shadowing redisPool
+		var err error
+		redisPool, err = initializeRedis()
+		if err != nil {
+			log.Printf("initializeRedis: %v", err)
+			http.Error(res, "Error initializing connection pool", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	redisConn := redisPool.Get()
+	defer redisConn.Close()
+
+	// Search original url from path
+	// if original url exist
+	// 	return Redirect response
+	// else
+	// 	return 404
+	ss := strings.Split(req.URL.Path, "/")
+	shortHash := ss[len(ss)-1]
+	if originalUrl, err := redis.String(redisConn.Do("GET", shortHash)); err != nil {
+		log.Printf("Redirect key not exist: %v", err)
+		http.Error(res, "Error redirect path", http.StatusNotFound)
+		return
+	} else {
+		log.Printf("Redirect url: %v", originalUrl)
+		http.Redirect(res, req, originalUrl, http.StatusSeeOther)
+	}
 }

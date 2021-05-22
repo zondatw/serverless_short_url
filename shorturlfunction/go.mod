@@ -1,4 +1,4 @@
-module github.com/zondatw/serverless_short_url_function/cloud_function
+module github.com/zondatw/serverless_short_url_function/shorturlfunction
 
 go 1.15
 
