@@ -42,3 +42,7 @@ $ make deploy_redirect
 ```cmd
 $ make test
 ```
+
+#### Node
+
+Currently test will failed: `Redirect key not exist: read tcp 127.0.0.1:62178->127.0.0.1:62177: wsarecv: An established connection was aborted by the software in your host machine.`, Maybe miniredis call too more times during testing.
