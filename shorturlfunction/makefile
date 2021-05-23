@@ -10,6 +10,8 @@ REGION = us-central1
 REDISHOST = 10.0.0.1
 REDISPORT = 6379
 SHORTURLBASE = https://us-central1-serverless-test-XXXXX.cloudfunctions.net/Redirect/
+PROJECTID = serverless-test-XXXXX
+ISONGCP = True
 
 all: test deploy_register deploy_redirect
 
@@ -22,7 +24,7 @@ deploy_register:
 		--trigger-http \
 		--region $(REGION) \
 		--vpc-connector $(CONNECTOR) \
-		--set-env-vars REDISHOST=$(REDISHOST),REDISPORT=$(REDISPORT),SHORTURLBASE=$(SHORTURLBASE)
+		--set-env-vars REDISHOST=$(REDISHOST),REDISPORT=$(REDISPORT),SHORTURLBASE=$(SHORTURLBASE),ISONGCP=$(ISONGCP),PROJECTID=$(PROJECTID)
 
 deploy_redirect:
 	gcloud functions deploy Redirect \
@@ -30,7 +32,7 @@ deploy_redirect:
 		--trigger-http \
 		--region $(REGION) \
 		--vpc-connector $(CONNECTOR) \
-		--set-env-vars REDISHOST=$(REDISHOST),REDISPORT=$(REDISPORT)
+		--set-env-vars REDISHOST=$(REDISHOST),REDISPORT=$(REDISPORT),ISONGCP=$(ISONGCP),PROJECTID=$(PROJECTID)
 
 .PHONY: clean
 clean:

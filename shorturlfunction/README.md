@@ -6,6 +6,16 @@ Redirect: Direct user to other site with short url path which from Register
 
 They will be deployed to separate functions.  
 
+## Services
+
+### Firestore
+
+This project have uses Firestore, so should be execute Firestore service.  
+
+Schema:  
+![firestore_schema.png](images/firestore_schema.png)  
+
+
 ## Environments
 
 ### Register
@@ -30,6 +40,8 @@ REGION = us-central1
 REDISHOST = 10.0.0.1
 REDISPORT = 6379
 SHORTURLBASE = https://us-central1-serverless-test-XXXXX.cloudfunctions.net/Redirect/
+PROJECTID = serverless-test-XXXXX
+ISONGCP = True
 ```
 
 ```cmd

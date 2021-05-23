@@ -1,4 +1,8 @@
 .gcloudignore
 
 makefile
+*images
 README.md
+
+main.go
+*.json

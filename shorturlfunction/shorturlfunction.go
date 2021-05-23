@@ -1,6 +1,7 @@
 package shorturlfunction
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"path"
 	"strings"
 
+	"cloud.google.com/go/firestore"
+	firebase "firebase.google.com/go"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -50,9 +53,34 @@ func initializeRedis() (*redis.Pool, error) {
 	}, nil
 }
 
+// initializeFireBase initializes firebase client
+func initializeFireBase(ctx context.Context) (*firestore.Client, error) {
+	projectID := os.Getenv("PROJECTID")
+	if projectID == "" {
+		return nil, errors.New("PROJECTID must be set")
+	}
+
+	conf := &firebase.Config{ProjectID: projectID}
+	app, err := firebase.NewApp(ctx, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return app.Firestore(ctx)
+}
+
 // conertToShort use crc32 to get short hash
-func convertToShort(originalUrl string) string {
-	return fmt.Sprintf("%x%x", crc32.ChecksumIEEE([]byte(originalUrl+"AABBCCDD")), crc32.ChecksumIEEE([]byte(originalUrl+"ZZXXYYWW")))
+func convertToShort(url string) string {
+	return fmt.Sprintf("%x%x", crc32.ChecksumIEEE([]byte(url+"AABBCCDD")), crc32.ChecksumIEEE([]byte(url+"ZZXXYYWW")))
+}
+
+// storeShortUrlToRedis
+func storeShortUrlToRedis(redisConn redis.Conn, shortHash string, url string) error {
+	redisConn.Send("MULTI")
+	redisConn.Send("SET", shortHash, url)
+	redisConn.Send("EXPIRE", shortHash, 30*24*60*60) // expire 30 days
+	_, err := redisConn.Do("EXEC")
+	return err
 }
 
 // Register set new url on redis instance
@@ -102,12 +130,28 @@ func Register(res http.ResponseWriter, req *http.Request) {
 		rgw.Url = u.String()
 	}
 
-	// Store to redis
-	redisConn.Send("MULTI")
-	redisConn.Send("SET", shortHash, rg.Url)
-	redisConn.Send("EXPIRE", rg.Url, 30*24*60*60) // expire 30 days
+	// Store to firebase
+	// This function only execute on gcp
+	if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
+		ctx := context.Background()
+		client, err := initializeFireBase(ctx)
+		if err != nil {
+			log.Printf("initializeFireBase: %v", err)
+			http.Error(res, "Error initializing firebase", http.StatusInternalServerError)
+			return
+		}
+		if _, err := client.Collection("short-url-map").Doc(shortHash).Set(ctx, map[string]interface{}{
+			"target": rg.Url,
+			"type":   "url",
+		}); err != nil {
+			log.Printf("Add short url to firebase error: %v", err)
+			http.Error(res, "Error store data to firebase", http.StatusInternalServerError)
+			return
+		}
+	}
 
-	if _, err := redisConn.Do("EXEC"); err != nil {
+	// Store to redis
+	if err := storeShortUrlToRedis(redisConn, shortHash, rg.Url); err != nil {
 		log.Printf("Store short url to redis: %v", err)
 		http.Error(res, "Error storing data to redis", http.StatusInternalServerError)
 		return
@@ -142,12 +186,36 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 	// 	return 404
 	ss := strings.Split(req.URL.Path, "/")
 	shortHash := ss[len(ss)-1]
-	if originalUrl, err := redis.String(redisConn.Do("GET", shortHash)); err != nil {
-		log.Printf("Redirect key not exist: %v", err)
-		http.Error(res, "Error redirect path", http.StatusNotFound)
-		return
-	} else {
-		log.Printf("Redirect url: %v", originalUrl)
-		http.Redirect(res, req, originalUrl, http.StatusSeeOther)
+	var targetUrl string = ""
+	var err error = nil
+	targetUrl, err = redis.String(redisConn.Do("GET", shortHash))
+	if err != nil {
+		// This function only execute on gcp
+		if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
+			ctx := context.Background()
+			client, err := initializeFireBase(ctx)
+			if err != nil {
+				log.Printf("initializeFireBase: %v", err)
+				http.Error(res, "Error initializing firebase", http.StatusInternalServerError)
+				return
+			}
+			if result, err := client.Collection("short-url-map").Doc(shortHash).Get(ctx); err == nil {
+				targetUrl = result.Data()["target"].(string)
+				// Store to redis
+				if err := storeShortUrlToRedis(redisConn, shortHash, targetUrl); err != nil {
+					log.Printf("Store short url to redis: %v", err)
+					http.Error(res, "Error storing data to redis", http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+		if targetUrl == "" {
+			log.Printf("Redirect key not exist: %v", err)
+			http.Error(res, "Error redirect path", http.StatusNotFound)
+			return
+		}
 	}
+
+	log.Printf("Redirect url: %v", targetUrl)
+	http.Redirect(res, req, targetUrl, http.StatusSeeOther)
 }

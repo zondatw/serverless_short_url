@@ -94,10 +94,10 @@ func TestRedirect(t *testing.T) {
 	os.Setenv("REDISPORT", redisServer.Port())
 
 	shortHash := "ad6e1f62aa3fc5e4"
-	originalUrl := "http://test.org/original_url"
+	targetUrl := "http://test.org/original_url"
 	shortUrl := "http://short_url/" + shortHash
 
-	redisServer.Set(shortHash, originalUrl)
+	redisServer.Set(shortHash, targetUrl)
 
 	req := httptest.NewRequest("GET", shortUrl, strings.NewReader(""))
 	rr := httptest.NewRecorder()
@@ -109,8 +109,8 @@ func TestRedirect(t *testing.T) {
 	}
 
 	returnUrl := rr.HeaderMap.Get("Location")
-	if originalUrl != returnUrl {
-		t.Errorf("Redirect got url %v, want %v", returnUrl, originalUrl)
+	if targetUrl != returnUrl {
+		t.Errorf("Redirect got url %v, want %v", returnUrl, targetUrl)
 	}
 
 }
