@@ -6,16 +6,20 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc32"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/pubsub"
 	firebase "firebase.google.com/go"
 	"github.com/gomodule/redigo/redis"
+	"github.com/linkedin/goavro"
 )
 
 var redisPool *redis.Pool
@@ -54,12 +58,7 @@ func initializeRedis() (*redis.Pool, error) {
 }
 
 // initializeFireBase initializes firebase client
-func initializeFireBase(ctx context.Context) (*firestore.Client, error) {
-	projectID := os.Getenv("PROJECTID")
-	if projectID == "" {
-		return nil, errors.New("PROJECTID must be set")
-	}
-
+func initializeFireBase(ctx context.Context, projectID string) (*firestore.Client, error) {
 	conf := &firebase.Config{ProjectID: projectID}
 	app, err := firebase.NewApp(ctx, conf)
 	if err != nil {
@@ -81,6 +80,58 @@ func storeShortUrlToRedis(redisConn redis.Conn, shortHash string, url string) er
 	redisConn.Send("EXPIRE", shortHash, 30*24*60*60) // expire 30 days
 	_, err := redisConn.Do("EXEC")
 	return err
+}
+
+// sendClientSourceToPub will send source ip and agent to publisher
+func sendClientSourceToPub(ctx context.Context, projectID string, shortHash string, sourceIP string, agent string) {
+	client, err := pubsub.NewClient(ctx, projectID)
+	if err != nil {
+		log.Printf("sendClientSourceToPub: %v", err)
+		return
+	}
+	defer client.Close()
+
+	topicID := os.Getenv("TOPICID")
+	if topicID == "" {
+		log.Printf("sendClientSourceToPub: TOPICID must be set")
+		return
+	}
+
+	avscFile := os.Getenv("AVSCFILE")
+	if avscFile == "" {
+		log.Printf("sendClientSourceToPub: AVSCFILE must be set")
+		return
+	}
+
+	avroSource, err := ioutil.ReadFile(avscFile)
+	if err != nil {
+		log.Printf("sendClientSourceToPub: ioutil.ReadFile err: %v", err)
+		return
+	}
+	codec, err := goavro.NewCodec(string(avroSource))
+	if err != nil {
+		log.Printf("sendClientSourceToPub: goavro.NewCodec err: %v", err)
+		return
+	}
+
+	record := map[string]interface{}{
+		"Datetime":  time.Now().Format(time.RFC3339),
+		"SourceIp":  sourceIP,
+		"Agent":     agent,
+		"ShortHash": shortHash,
+	}
+
+	topic := client.Topic(topicID)
+
+	msg, err := codec.TextualFromNative(nil, record)
+	if err != nil {
+		log.Printf("sendClientSourceToPub: codec.TextualFromNative err: %v", err)
+		return
+	}
+
+	topic.Publish(ctx, &pubsub.Message{
+		Data: msg,
+	})
 }
 
 // Register set new url on redis instance
@@ -133,8 +184,14 @@ func Register(res http.ResponseWriter, req *http.Request) {
 	// Store to firebase
 	// This function only execute on gcp
 	if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
+		projectID := os.Getenv("PROJECTID")
+		if projectID == "" {
+			log.Printf("initializeEnvs: PROJECTID must be set")
+			http.Error(res, "Error initializing project id", http.StatusInternalServerError)
+			return
+		}
 		ctx := context.Background()
-		client, err := initializeFireBase(ctx)
+		client, err := initializeFireBase(ctx, projectID)
 		if err != nil {
 			log.Printf("initializeFireBase: %v", err)
 			http.Error(res, "Error initializing firebase", http.StatusInternalServerError)
@@ -192,8 +249,14 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		// This function only execute on gcp
 		if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
+			projectID := os.Getenv("PROJECTID")
+			if projectID == "" {
+				log.Printf("initializeEnvs: PROJECTID must be set")
+				http.Error(res, "Error initializing project id", http.StatusInternalServerError)
+				return
+			}
 			ctx := context.Background()
-			client, err := initializeFireBase(ctx)
+			client, err := initializeFireBase(ctx, projectID)
 			if err != nil {
 				log.Printf("initializeFireBase: %v", err)
 				http.Error(res, "Error initializing firebase", http.StatusInternalServerError)
@@ -208,12 +271,16 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 			}
+
+			// Sending client source to publisher
+			sendClientSourceToPub(ctx, projectID, shortHash, req.Referer(), req.UserAgent())
 		}
 		if targetUrl == "" {
 			log.Printf("Redirect key not exist: %v", err)
 			http.Error(res, "Error redirect path", http.StatusNotFound)
 			return
 		}
+
 	}
 
 	log.Printf("Redirect url: %v", targetUrl)

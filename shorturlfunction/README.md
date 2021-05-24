@@ -42,6 +42,8 @@ REDISPORT = 6379
 SHORTURLBASE = https://us-central1-serverless-test-XXXXX.cloudfunctions.net/Redirect/
 PROJECTID = serverless-test-XXXXX
 ISONGCP = True
+TOPICID = projects/serverless-test-XXXXX/topics/short-url-source-topic
+ACSCFILE = projects/serverless-test-XXXXX/schemas/short-url-source-schema
 ```
 
 ```cmd
