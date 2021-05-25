@@ -5,4 +5,4 @@ makefile
 README.md
 
 main.go
-*.json
+key.json

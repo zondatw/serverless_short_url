@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc32"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -97,28 +96,17 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 		return
 	}
 
-	avscFile := os.Getenv("AVSCFILE")
-	if avscFile == "" {
-		log.Printf("sendClientSourceToPub: AVSCFILE must be set")
-		return
-	}
-
-	avroSource, err := ioutil.ReadFile(avscFile)
-	if err != nil {
-		log.Printf("sendClientSourceToPub: ioutil.ReadFile err: %v", err)
-		return
-	}
-	codec, err := goavro.NewCodec(string(avroSource))
-	if err != nil {
-		log.Printf("sendClientSourceToPub: goavro.NewCodec err: %v", err)
-		return
-	}
-
 	record := map[string]interface{}{
 		"Datetime":  time.Now().Format(time.RFC3339),
 		"SourceIp":  sourceIP,
 		"Agent":     agent,
 		"ShortHash": shortHash,
+	}
+
+	codec, err := goavro.NewCodec(AVRO_SOURCE)
+	if err != nil {
+		log.Printf("sendClientSourceToPub: goavro.NewCodec err: %v", err)
+		return
 	}
 
 	topic := client.Topic(topicID)
@@ -129,9 +117,15 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 		return
 	}
 
-	topic.Publish(ctx, &pubsub.Message{
+	result := topic.Publish(ctx, &pubsub.Message{
 		Data: msg,
 	})
+	id, err := result.Get(ctx)
+	if err != nil {
+		log.Printf("sendClientSourceToPub: get: %v", err)
+		return
+	}
+	log.Printf("sendClientSourceToPub: Published message with custom attributes; msg ID: %v\n", id)
 }
 
 // Register set new url on redis instance
@@ -245,17 +239,25 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 	shortHash := ss[len(ss)-1]
 	var targetUrl string = ""
 	var err error = nil
+	var ctx context.Context
+	var projectID string
+	var isOnGCP bool = false
+	// This function only execute on gcp
+	if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
+		isOnGCP = true
+		ctx = context.Background()
+		projectID = os.Getenv("PROJECTID")
+		if projectID == "" {
+			log.Printf("initializeEnvs: PROJECTID must be set")
+			http.Error(res, "Error initializing project id", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	targetUrl, err = redis.String(redisConn.Do("GET", shortHash))
 	if err != nil {
 		// This function only execute on gcp
-		if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
-			projectID := os.Getenv("PROJECTID")
-			if projectID == "" {
-				log.Printf("initializeEnvs: PROJECTID must be set")
-				http.Error(res, "Error initializing project id", http.StatusInternalServerError)
-				return
-			}
-			ctx := context.Background()
+		if isOnGCP {
 			client, err := initializeFireBase(ctx, projectID)
 			if err != nil {
 				log.Printf("initializeFireBase: %v", err)
@@ -272,8 +274,6 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 				}
 			}
 
-			// Sending client source to publisher
-			sendClientSourceToPub(ctx, projectID, shortHash, req.Referer(), req.UserAgent())
 		}
 		if targetUrl == "" {
 			log.Printf("Redirect key not exist: %v", err)
@@ -281,6 +281,11 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+	}
+	// This function only execute on gcp
+	if isOnGCP {
+		// Sending client source to publisher
+		sendClientSourceToPub(ctx, projectID, shortHash, req.Referer(), req.UserAgent())
 	}
 
 	log.Printf("Redirect url: %v", targetUrl)
