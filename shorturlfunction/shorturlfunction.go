@@ -285,7 +285,14 @@ func Redirect(res http.ResponseWriter, req *http.Request) {
 	// This function only execute on gcp
 	if isOnGCP {
 		// Sending client source to publisher
-		sendClientSourceToPub(ctx, projectID, shortHash, req.Referer(), req.UserAgent())
+		ipAdr := req.Header.Get("X-Real-Ip")
+		if ipAdr == "" {
+			ipAdr = req.Header.Get("X-Forwarded-For")
+		}
+		if ipAdr == "" {
+			ipAdr = req.RemoteAddr
+		}
+		sendClientSourceToPub(ctx, projectID, shortHash, ipAdr, req.UserAgent())
 	}
 
 	log.Printf("Redirect url: %v", targetUrl)
