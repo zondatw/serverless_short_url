@@ -102,6 +102,7 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 		"Agent":     agent,
 		"ShortHash": shortHash,
 	}
+	log.Printf("sendClientSourceToPub: original: %v", record)
 
 	codec, err := goavro.NewCodec(AVRO_SOURCE)
 	if err != nil {
@@ -122,7 +123,7 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 	})
 	id, err := result.Get(ctx)
 	if err != nil {
-		log.Printf("sendClientSourceToPub: get: %v", err)
+		log.Printf("sendClientSourceToPub err: original get: %v", err)
 		return
 	}
 	log.Printf("sendClientSourceToPub: Published message with custom attributes; msg ID: %v\n", id)
