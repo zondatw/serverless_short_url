@@ -53,6 +53,7 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 		return errors.New(fmt.Sprintf("ShortUrlSource: goavro.NewCodec err: %v", err))
 	}
 
+	// convert []byte to json data
 	native, _, err := codec.NativeFromTextual(m.Data)
 	if err != nil {
 		log.Printf("ShortUrlSource: goavro.NativeFromTextual err: %v", err)
@@ -77,6 +78,7 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 		return errors.New(fmt.Sprintf("ShortUrlSource: convert string to datetime error: %v", err))
 	}
 
+	// store access
 	accessID := fmt.Sprintf("%x", getAccessId(m.Data))
 	access := map[string]interface{}{
 		"datetime":   datetime,
@@ -88,6 +90,28 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	if _, err := client.Collection("access").Doc(accessID).Set(ctx, access); err != nil {
 		log.Printf("ShortUrlSource: add access to firebase error: %v", err)
 		return errors.New(fmt.Sprintf("ShortUrlSource: add access to firebase error: %v", err))
+	}
+
+	// create daily report doc when it not exist
+	dateStr := fmt.Sprintf("%d/%d/%d", datetime.Year(), datetime.Month(), datetime.Day())
+	if _, err := client.Collection("daily-report").Doc(dateStr).Get(ctx); err != nil {
+		dailyReport := map[string]interface{}{
+			"short-hash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
+		}
+		if _, err := client.Collection("daily-report").Doc(dateStr).Set(ctx, dailyReport); err != nil {
+			log.Printf("ShortUrlSource: init daily report to firebase error: %v", err)
+			return errors.New(fmt.Sprintf("ShortUrlSource: init daily report  to firebase error: %v", err))
+		}
+	}
+
+	// store daily report
+	countDailyReport := []firestore.Update{
+		{Path: "count", Value: firestore.Increment(1)},
+	}
+	log.Printf("ShortUrlSource: date: %v, report: %v", dateStr, countDailyReport)
+	if _, err := client.Collection("daily-report").Doc(dateStr).Update(ctx, countDailyReport); err != nil {
+		log.Printf("ShortUrlSource: update daily report from firebase error: %v", err)
+		return errors.New(fmt.Sprintf("ShortUrlSource: update daily report from firebase error: %v", err))
 	}
 	return nil
 }

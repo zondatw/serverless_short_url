@@ -10,7 +10,8 @@ This project have uses Firestore, so should be execute Firestore service.
 
 Schema:  
 ![firestore_schema.png](images/firestore_schema.png)  
-
+![firestore_schema_daily_report_1.png](images/firestore_schema_daily_report_1.png)  
+![firestore_schema_daily_report_2.png](images/firestore_schema_daily_report_2.png)  
 
 ## Environments
 ### Deploy
