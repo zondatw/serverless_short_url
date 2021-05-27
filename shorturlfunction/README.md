@@ -35,12 +35,12 @@ Modify makefile deploy value
 
 ```makefile
 # GCP cloud function deploy
-CONNECTOR = projects/serverless-test-XXXXX/locations/us-central1/connectors/serverless-connector
-REGION = us-central1
-REDISHOST = 10.0.0.1
-REDISPORT = 6379
-SHORTURLBASE = https://us-central1-serverless-test-XXXXX.cloudfunctions.net/Redirect/
 PROJECTID = serverless-test-XXXXX
+CONNECTOR = projects/$(PROJECTID)/locations/us-central1/connectors/serverless-connector
+REGION = us-central1
+REDISHOST = 10.35.95.115
+REDISPORT = 6379
+SHORTURLBASE = https://us-central1-$(PROJECTID).cloudfunctions.net/Redirect/
 ISONGCP = True
 TOPICID = short-url-source-topic
 ```
