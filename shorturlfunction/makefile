@@ -14,7 +14,7 @@ SHORTURLBASE = https://us-central1-$(PROJECTID).cloudfunctions.net/Redirect/
 ISONGCP = True
 TOPICID = short-url-source-topic
 
-all: test deploy_register deploy_redirect
+all: test deploy_register deploy_redirect deploy_register_with_auth
 
 test:
 	$(GOTEST) -v ./...
@@ -34,6 +34,14 @@ deploy_redirect:
 		--region $(REGION) \
 		--vpc-connector $(CONNECTOR) \
 		--set-env-vars REDISHOST=$(REDISHOST),REDISPORT=$(REDISPORT),ISONGCP=$(ISONGCP),PROJECTID=$(PROJECTID),TOPICID=$(TOPICID)
+
+deploy_register_with_auth:
+	gcloud functions deploy RegisterWithAuth \
+		--runtime go113 \
+		--trigger-http \
+		--region $(REGION) \
+		--vpc-connector $(CONNECTOR) \
+		--set-env-vars REDISHOST=$(REDISHOST),REDISPORT=$(REDISPORT),SHORTURLBASE=$(SHORTURLBASE),ISONGCP=$(ISONGCP),PROJECTID=$(PROJECTID)
 
 .PHONY: clean
 clean:

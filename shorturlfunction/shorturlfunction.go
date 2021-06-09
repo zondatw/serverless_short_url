@@ -17,6 +17,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/auth"
 	"github.com/gomodule/redigo/redis"
 	"github.com/linkedin/goavro"
 )
@@ -56,10 +57,15 @@ func initializeRedis() (*redis.Pool, error) {
 	}, nil
 }
 
+// getFirebaseApp get firbase app
+func getFirebaseApp(ctx context.Context, projectID string) (*firebase.App, error) {
+	conf := &firebase.Config{ProjectID: projectID}
+	return firebase.NewApp(ctx, conf)
+}
+
 // initializeFireBase initializes firebase client
 func initializeFireBase(ctx context.Context, projectID string) (*firestore.Client, error) {
-	conf := &firebase.Config{ProjectID: projectID}
-	app, err := firebase.NewApp(ctx, conf)
+	app, err := getFirebaseApp(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +73,33 @@ func initializeFireBase(ctx context.Context, projectID string) (*firestore.Clien
 	return app.Firestore(ctx)
 }
 
+// initializeAuth initializes Auth client
+func initializeAuth(ctx context.Context, projectID string) (*auth.Client, error) {
+	app, err := getFirebaseApp(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return app.Auth(ctx)
+}
+
+//checkAuth Check ID token
+func checkAuth(ctx context.Context, projectID string, idToken string) (*auth.Token, error) {
+	auth, err := initializeAuth(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := auth.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
 // conertToShort use crc32 to get short hash
-func convertToShort(url string) string {
-	return fmt.Sprintf("%x%x", crc32.ChecksumIEEE([]byte(url+"AABBCCDD")), crc32.ChecksumIEEE([]byte(url+"ZZXXYYWW")))
+func convertToShort(url string, extra string) string {
+	return fmt.Sprintf("%x%x", crc32.ChecksumIEEE([]byte(url+extra+"AABBCCDD")), crc32.ChecksumIEEE([]byte(url+extra+"ZZXXYYWW")))
 }
 
 // storeShortUrlToRedis
@@ -129,9 +159,41 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 	log.Printf("sendClientSourceToPub: Published message with custom attributes; msg ID: %v\n", id)
 }
 
+// Register set new url on redis instance when sign in
+// and return short url path
+func RegisterWithAuth(res http.ResponseWriter, req *http.Request) {
+	authEmail := ""
+	// This function only execute on gcp
+	if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
+		projectID := os.Getenv("PROJECTID")
+		if projectID == "" {
+			log.Printf("initializeEnvs: PROJECTID must be set")
+			http.Error(res, "Error initializing project id", http.StatusInternalServerError)
+			return
+		}
+		ctx := context.Background()
+		log.Printf("Auth Token: %v", req.Header.Get("Authorization"))
+		token, err := checkAuth(ctx, projectID, req.Header.Get("Authorization"))
+		if err != nil {
+			log.Printf("check auth error: %v", err)
+			http.Error(res, "Auth token error", http.StatusBadRequest)
+			return
+		}
+		authEmail = token.Claims["email"].(string)
+	}
+	RegisterBase(res, req, true, authEmail)
+}
+
 // Register set new url on redis instance
 // and return short url path
 func Register(res http.ResponseWriter, req *http.Request) {
+	RegisterBase(res, req, false, "")
+}
+
+// RegisterBase set new url on redis instance
+// and when fromAuth is true, it will store auth's email to url info
+// and return short url path
+func RegisterBase(res http.ResponseWriter, req *http.Request, fromAuth bool, authEmail string) {
 	shortUrlBase := os.Getenv("SHORTURLBASE")
 	if shortUrlBase == "" {
 		log.Printf("initializeEnvs: SHORTURLBASE must be set")
@@ -165,7 +227,7 @@ func Register(res http.ResponseWriter, req *http.Request) {
 
 	// Get short url
 	var rgw registerResponseStruct
-	shortHash := convertToShort(rg.Url)
+	shortHash := convertToShort(rg.Url, authEmail)
 
 	if u, err := url.Parse(shortUrlBase); err != nil {
 		log.Printf("SHORTURLBASE value: %v", err)
@@ -185,6 +247,16 @@ func Register(res http.ResponseWriter, req *http.Request) {
 			http.Error(res, "Error initializing project id", http.StatusInternalServerError)
 			return
 		}
+
+		shortUrlData := map[string]interface{}{
+			"target": rg.Url,
+			"type":   "url",
+		}
+
+		if fromAuth {
+			shortUrlData["owner"] = authEmail
+		}
+
 		ctx := context.Background()
 		client, err := initializeFireBase(ctx, projectID)
 		if err != nil {
@@ -192,10 +264,7 @@ func Register(res http.ResponseWriter, req *http.Request) {
 			http.Error(res, "Error initializing firebase", http.StatusInternalServerError)
 			return
 		}
-		if _, err := client.Collection("short-url-map").Doc(shortHash).Set(ctx, map[string]interface{}{
-			"target": rg.Url,
-			"type":   "url",
-		}); err != nil {
+		if _, err := client.Collection("short-url-map").Doc(shortHash).Set(ctx, shortUrlData); err != nil {
 			log.Printf("Add short url to firebase error: %v", err)
 			http.Error(res, "Error store data to firebase", http.StatusInternalServerError)
 			return

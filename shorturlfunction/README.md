@@ -2,9 +2,10 @@
 
 GCP cloud function, it's have two major features: Register and Redirect.  
 Register: Store new url to server, and return short url  
+RegisterWithAuth: Major feature equal than Register, but it need to check token, and short url have owner when store in db.  
 Redirect: Direct user to other site with short url path which from Register  
 
-They will be deployed to separate functions.  
+They will be deployed to separate functions and use identity platform to get auth token.  
 
 ## Services
 
@@ -19,6 +20,12 @@ Schema:
 ## Environments
 
 ### Register
+
+* REDISHOST: redis host
+* REDISPORT: redis port
+* SHORTURLBASE: Redirect function url
+
+### RegisterWithAuth
 
 * REDISHOST: redis host
 * REDISPORT: redis port
@@ -47,6 +54,7 @@ TOPICID = short-url-source-topic
 
 ```cmd
 $ make deploy_register
+$ make deploy_register_with_auth
 $ make deploy_redirect
 ```
 

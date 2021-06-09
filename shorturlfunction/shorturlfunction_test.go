@@ -13,8 +13,13 @@ import (
 )
 
 func TestConvertToShort(t *testing.T) {
-	shortHash := convertToShort("http://test.org/original_url")
+	shortHash := convertToShort("http://test.org/original_url", "")
 	if "ad6e1f62aa3fc5e4" != shortHash {
+		t.Errorf("Get wrong shortHash %v", shortHash)
+	}
+
+	shortHash = convertToShort("http://test.org/original_url", "test")
+	if "6a7bb911f66117" != shortHash {
 		t.Errorf("Get wrong shortHash %v", shortHash)
 	}
 }
