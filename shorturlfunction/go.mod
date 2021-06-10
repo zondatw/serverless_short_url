@@ -1,4 +1,4 @@
-module github.com/zondatw/serverless_short_url_function/shorturlfunction
+module github.com/zondatw/serverless_short_url/shorturlfunction
 
 go 1.15
 
