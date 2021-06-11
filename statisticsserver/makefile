@@ -13,6 +13,7 @@ build:
 
 docker:
 	@docker build --tag docker.io/$(DOCKERHUB)/$(NAMESPACE):latest .
+	@docker push docker.io/$(DOCKERHUB)/$(NAMESPACE):latest
 
 .PHONY: clean
 clean:
