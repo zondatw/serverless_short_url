@@ -17,7 +17,7 @@ var router *gin.Engine
 func main() {
 	var (
 		ip   = "0.0.0.0"
-		port = "8000"
+		port = "80"
 	)
 
 	// Use a service account
@@ -25,7 +25,7 @@ func main() {
 	var app *firebase.App
 	var err error
 	if projectID, ok := os.LookupEnv("projectID"); ok {
-		fmt.Printf("On GCP")
+		fmt.Printf("On GCP: %v\n", projectID)
 		conf := &firebase.Config{ProjectID: projectID}
 		app, err = firebase.NewApp(ctx, conf)
 	} else {
