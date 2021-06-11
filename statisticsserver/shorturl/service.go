@@ -9,7 +9,8 @@ import (
 )
 
 type Service interface {
-	Health(context *gin.Context)
+	GetAll(context *gin.Context)
+	Get(context *gin.Context)
 }
 
 type shorturlService struct {
