@@ -6,7 +6,7 @@ DOCKERHUB = zondayang
 NAMESPACE = statistics_server
 BINARY_NAME = statisticsserver
 
-all: test build
+all: build
 
 build:
 	$(GOBUILD) -o $(BINARY_NAME) -v
