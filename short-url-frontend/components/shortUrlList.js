@@ -1,5 +1,14 @@
+import useSWR from 'swr'
+
+const fetcher = url => fetch(url).then(r => r.json());
+
 /* Reference: https://tailwindui.com/components/application-ui/lists/tables */
-export default function ShortUrlList({ shortUrls }) {
+export default function ShortUrlList() {
+  const { data: shortUrls, error } = useSWR('http://localhost/api/shorturl/', fetcher)
+
+  
+  if (error) return <div>failed to load</div>;
+  if (!shortUrls) return <div>loading...</div>;
   return (
     <div className="flex flex-col">
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -61,4 +70,15 @@ export default function ShortUrlList({ shortUrls }) {
       </div>
     </div>
   )
+}
+
+export async function getServerSideProps() {
+  const res = await fetch('http://34.120.60.28/api/shorturl/')
+  const shortUrls = await res.json()
+
+  return {
+    props: {
+      shortUrls,
+    },
+  }
 }
