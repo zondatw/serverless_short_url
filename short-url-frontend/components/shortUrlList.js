@@ -1,12 +1,15 @@
+import getConfig from 'next/config'
 import useSWR from 'swr'
 
+import Pagination from './pagination'
+
+const { publicRuntimeConfig } = getConfig()
 const fetcher = url => fetch(url).then(r => r.json());
 
 /* Reference: https://tailwindui.com/components/application-ui/lists/tables */
 export default function ShortUrlList() {
-  const { data: shortUrls, error } = useSWR('http://localhost/api/shorturl/', fetcher)
+  const { data: shortUrls, error } = useSWR(publicRuntimeConfig.apiURL + 'api/shorturl/', fetcher)
 
-  
   if (error) return <div>failed to load</div>;
   if (!shortUrls) return <div>loading...</div>;
   return (
@@ -68,17 +71,7 @@ export default function ShortUrlList() {
           </div>
         </div>
       </div>
+      <Pagination />
     </div>
   )
-}
-
-export async function getServerSideProps() {
-  const res = await fetch('http://34.120.60.28/api/shorturl/')
-  const shortUrls = await res.json()
-
-  return {
-    props: {
-      shortUrls,
-    },
-  }
 }
