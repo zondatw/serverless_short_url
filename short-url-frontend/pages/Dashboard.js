@@ -7,9 +7,10 @@ const { serverRuntimeConfig, publicRuntimeConfig } = getConfig()
 
 
 export async function getServerSideProps() {
+  var apiURL = process.env.apiURL || publicRuntimeConfig.apiURL
   return {
     props: {
-      apiURL: publicRuntimeConfig.apiURL
+      apiURL: apiURL
     }
   }
 }
