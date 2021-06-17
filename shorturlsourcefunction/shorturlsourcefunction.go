@@ -81,10 +81,10 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	// store access
 	accessID := fmt.Sprintf("%x", getAccessId(m.Data))
 	access := map[string]interface{}{
-		"datetime":   datetime,
-		"source-ip":  record["SourceIp"],
-		"agent":      record["Agent"],
-		"short-hash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
+		"datetime":  datetime,
+		"sourceIp":  record["SourceIp"],
+		"agent":     record["Agent"],
+		"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
 	}
 	log.Printf("ShortUrlSource: access id: %v, data: %v", accessID, access)
 	if _, err := client.Collection("access").Doc(accessID).Set(ctx, access); err != nil {
@@ -96,7 +96,7 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	dateStr := fmt.Sprintf("%d/%d/%d", datetime.Year(), datetime.Month(), datetime.Day())
 	if _, err := client.Collection("daily-report").Doc(dateStr).Get(ctx); err != nil {
 		dailyReport := map[string]interface{}{
-			"short-hash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
+			"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
 		}
 		if _, err := client.Collection("daily-report").Doc(dateStr).Set(ctx, dailyReport); err != nil {
 			log.Printf("ShortUrlSource: init daily report to firebase error: %v", err)
