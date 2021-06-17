@@ -26,8 +26,10 @@ type GetAllParam struct {
 func (service *shorturlService) GetAll(context *gin.Context) {
 	var param GetAllParam
 	context.Bind(&param)
-	if param.Start < 0 || param.Length < 0 {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Values can't less than 0"})
+	if param.Start < 0 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Start can't less than 0"})
+	} else if param.Length <= 0 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Length can't less than 1"})
 	} else {
 		context.JSON(http.StatusOK, getAllShortUrlList(service.ctx, service.client, param.Start, param.Length))
 	}
