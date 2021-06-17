@@ -249,9 +249,9 @@ func RegisterBase(res http.ResponseWriter, req *http.Request, fromAuth bool, aut
 		}
 
 		shortUrlData := map[string]interface{}{
-			"created-at": time.Now(),
-			"target":     rg.Url,
-			"type":       "url",
+			"createdAt": time.Now(),
+			"target":    rg.Url,
+			"type":      "url",
 		}
 
 		if fromAuth {
