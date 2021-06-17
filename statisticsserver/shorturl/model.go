@@ -3,6 +3,8 @@ package shorturl
 import (
 	"context"
 	"log"
+	"math"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/mitchellh/mapstructure"
@@ -10,20 +12,32 @@ import (
 )
 
 type ShortUrl struct {
-	Hash   string `json:"hash" form:"hash"`
-	Target string `json:"target" form:"target"`
-	Type   string `json:"type" form:"type"`
+	Hash      string    `json:"hash" form:"hash"`
+	Target    string    `json:"target" form:"target"`
+	Type      string    `json:"type" form:"type"`
+	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
+}
+
+type ShortUrlPaginate struct {
+	Data        []ShortUrl `json:"data" form:"data"`
+	Total       int        `json:"total" form:"total"`
+	Start       int        `json:"start" form:"start"`
+	Length      int        `json:"length" form:"length"`
+	TotalPage   int        `json:"totalPage" form:"totalPage"`
+	CurrentPage int        `json:"currentPage" form:"currentPage"`
 }
 
 type ShortUrlDetail struct {
-	Target string `json:"target" form:"target"`
-	Type   string `json:"type" form:"type"`
-	Owner  string `json:"owner,omitempty" form:"owner,omitempty"`
+	Target    string    `json:"target" form:"target"`
+	Type      string    `json:"type" form:"type"`
+	Owner     string    `json:"owner,omitempty" form:"owner,omitempty"`
+	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
 }
 
-func getAllShortUrlList(ctx context.Context, client *firestore.Client) []ShortUrl {
-	var ret []ShortUrl = make([]ShortUrl, 0)
-	iter := client.Collection("short-url-map").Documents(ctx)
+func getAllShortUrlList(ctx context.Context, client *firestore.Client, start int, length int) ShortUrlPaginate {
+	var data []ShortUrl = make([]ShortUrl, 0)
+	collect := client.Collection("short-url-map")
+	iter := collect.OrderBy("createdAt", firestore.Asc).StartAt(start).Limit(length).Documents(ctx)
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done {
@@ -34,14 +48,32 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client) []ShortUr
 		}
 
 		if detail, err := getShortUrlDetail(ctx, client, doc.Ref.ID); err == nil {
-			ret = append(ret, ShortUrl{
-				Hash:   doc.Ref.ID,
-				Target: detail.Target,
-				Type:   detail.Type,
+			data = append(data, ShortUrl{
+				Hash:      doc.Ref.ID,
+				Target:    detail.Target,
+				Type:      detail.Type,
+				CreatedAt: detail.CreatedAt,
 			})
 		} else {
 			break
 		}
+	}
+
+	docs, err := collect.OrderBy("createdAt", firestore.Asc).Documents(ctx).GetAll()
+	total := 0
+	if err != nil {
+		log.Printf("Error to GetAll: %v", err)
+	} else {
+		total = len(docs)
+	}
+
+	ret := ShortUrlPaginate{
+		Data:        data,
+		Total:       total,
+		Start:       start,
+		Length:      length,
+		TotalPage:   int(math.Floor(float64(total)/float64(length)) + 1),
+		CurrentPage: int(math.Floor(float64(start)/float64(length)) + 1),
 	}
 	return ret
 }
@@ -49,6 +81,7 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client) []ShortUr
 func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHash string) (ShortUrlDetail, error) {
 	var shortUrlDetail ShortUrlDetail
 	if result, err := client.Collection("short-url-map").Doc(shortUrlHash).Get(ctx); err == nil {
+		log.Printf("data: %v\n", result.Data())
 		if err := mapstructure.Decode(result.Data(), &shortUrlDetail); err != nil {
 			log.Printf("Error: %v\n", err)
 			return shortUrlDetail, err

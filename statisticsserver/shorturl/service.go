@@ -18,8 +18,19 @@ type shorturlService struct {
 	client *firestore.Client
 }
 
+type GetAllParam struct {
+	Start  int `form:"start"`
+	Length int `form:"length"`
+}
+
 func (service *shorturlService) GetAll(context *gin.Context) {
-	context.JSON(http.StatusOK, getAllShortUrlList(service.ctx, service.client))
+	var param GetAllParam
+	context.Bind(&param)
+	if param.Start < 0 || param.Length < 0 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Values can't less than 0"})
+	} else {
+		context.JSON(http.StatusOK, getAllShortUrlList(service.ctx, service.client, param.Start, param.Length))
+	}
 }
 
 func (service *shorturlService) Get(context *gin.Context) {
