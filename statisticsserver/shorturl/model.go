@@ -19,9 +19,11 @@ type ShortUrl struct {
 }
 
 type ShortUrlPaginate struct {
+	Prev        string     `json:"prev" form:"prev"`
+	Next        string     `json:"next" form:"next"`
 	Data        []ShortUrl `json:"data" form:"data"`
 	Total       int        `json:"total" form:"total"`
-	Start       int        `json:"start" form:"start"`
+	Start       string     `json:"start" form:"start"`
 	Length      int        `json:"length" form:"length"`
 	TotalPage   int        `json:"totalPage" form:"totalPage"`
 	CurrentPage int        `json:"currentPage" form:"currentPage"`
@@ -73,9 +75,10 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start str
 	}
 
 	ret := ShortUrlPaginate{
+		Next:        data[len(data)-1].Hash,
 		Data:        data,
 		Total:       total, // FIXME
-		Start:       0,     // FIXME
+		Start:       start,
 		Length:      length,
 		TotalPage:   int(math.Floor(float64(total)/float64(length)) + 1), // FIXME
 		CurrentPage: int(math.Floor(float64(0)/float64(length)) + 1),     // FIXME
