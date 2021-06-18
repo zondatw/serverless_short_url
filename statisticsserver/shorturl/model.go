@@ -34,10 +34,15 @@ type ShortUrlDetail struct {
 	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
 }
 
-func getAllShortUrlList(ctx context.Context, client *firestore.Client, start int, length int) ShortUrlPaginate {
+func getAllShortUrlList(ctx context.Context, client *firestore.Client, start string, length int) ShortUrlPaginate {
 	var data []ShortUrl = make([]ShortUrl, 0)
 	collect := client.Collection("short-url-map")
-	iter := collect.OrderBy("createdAt", firestore.Asc).StartAt(start).Limit(length).Documents(ctx)
+	var iter *firestore.DocumentIterator
+	if start == "" {
+		iter = collect.OrderBy(firestore.DocumentID, firestore.Asc).Limit(length).Documents(ctx)
+	} else {
+		iter = collect.OrderBy(firestore.DocumentID, firestore.Asc).StartAfter(start).Limit(length).Documents(ctx)
+	}
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done {
@@ -69,11 +74,11 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start int
 
 	ret := ShortUrlPaginate{
 		Data:        data,
-		Total:       total,
-		Start:       start,
+		Total:       total, // FIXME
+		Start:       0,     // FIXME
 		Length:      length,
-		TotalPage:   int(math.Floor(float64(total)/float64(length)) + 1),
-		CurrentPage: int(math.Floor(float64(start)/float64(length)) + 1),
+		TotalPage:   int(math.Floor(float64(total)/float64(length)) + 1), // FIXME
+		CurrentPage: int(math.Floor(float64(0)/float64(length)) + 1),     // FIXME
 	}
 	return ret
 }
@@ -81,7 +86,6 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start int
 func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHash string) (ShortUrlDetail, error) {
 	var shortUrlDetail ShortUrlDetail
 	if result, err := client.Collection("short-url-map").Doc(shortUrlHash).Get(ctx); err == nil {
-		log.Printf("data: %v\n", result.Data())
 		if err := mapstructure.Decode(result.Data(), &shortUrlDetail); err != nil {
 			log.Printf("Error: %v\n", err)
 			return shortUrlDetail, err
