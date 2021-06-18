@@ -1,7 +1,4 @@
-import { useState } from 'react';
-
-import { ArrowNarrowRightIcon } from '@heroicons/react/outline'
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from '@heroicons/react/solid'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid'
 
 export default function Pagination({ prev, next}) {
   return (
@@ -9,12 +6,14 @@ export default function Pagination({ prev, next}) {
       <div className="flex-1 flex justify-between sm:hidden">
         <a
           href="#"
+          onClick={() => prev()}
           className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
         >
           Previous
         </a>
         <a
           href="#"
+          onClick={() => next()}
           className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
         >
           Next
