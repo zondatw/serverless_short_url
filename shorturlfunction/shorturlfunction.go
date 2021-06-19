@@ -187,6 +187,17 @@ func RegisterWithAuth(res http.ResponseWriter, req *http.Request) {
 // Register set new url on redis instance
 // and return short url path
 func Register(res http.ResponseWriter, req *http.Request) {
+	// Set CORS headers for the preflight request
+	if req.Method == http.MethodOptions {
+		res.Header().Set("Access-Control-Allow-Origin", "*")
+		res.Header().Set("Access-Control-Allow-Methods", "POST")
+		res.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		res.Header().Set("Access-Control-Max-Age", "3600")
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	RegisterBase(res, req, false, "")
 }
 
