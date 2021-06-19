@@ -14,11 +14,11 @@ function classNames(...classes) {
 /* Reference https://tailwindui.com/components/application-ui/application-shells/stacked */
 export default function Layout({ children, title }) {
   return (
-    <div>
+    <div key="layout">
       <Head>
         <title>{title}</title>
       </Head>
-      <Disclosure as="nav" className="bg-gray-800">
+      <Disclosure key="nav" as="nav" className="bg-gray-800">
         {({ open }) => (
           <>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,18 +35,17 @@ export default function Layout({ children, title }) {
                     <div className="ml-10 flex items-baseline space-x-4">
                       {navigation.map((item, itemIdx) =>
                         itemIdx === 0 ? (
-                          <Fragment key={item}>
+                          <Fragment>
                             {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                            <Link href="/">
+                            <Link href="/" key={item}>
                               <a className="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">
                                 {item}
                               </a>
                             </Link>
                           </Fragment>
                         ) : (
-                          <Link href={item}>
+                          <Link href={item} key={item}>
                             <a
-                              key={item}
                               className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                             >
                               {item}
@@ -128,24 +127,27 @@ export default function Layout({ children, title }) {
               </div>
             </div>
 
-            <Disclosure.Panel className="md:hidden">
+            <Disclosure.Panel key="panel" className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 {navigation.map((item, itemIdx) =>
                   itemIdx === 0 ? (
-                    <Fragment key={item}>
+                    <Fragment>
                       {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                      <a href="#" className="bg-gray-900 text-white block px-3 py-2 rounded-md text-base font-medium">
-                        {item}
-                      </a>
+                      <Link href={item} key={item}>
+                        <a href="#" className="bg-gray-900 text-white block px-3 py-2 rounded-md text-base font-medium">
+                          {item}
+                        </a>
+                      </Link>
                     </Fragment>
                   ) : (
-                    <a
-                      key={item}
-                      href="#"
-                      className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-                    >
-                      {item}
-                    </a>
+                    <Link href={item} key={item}>
+                      <a
+                        href="#"
+                        className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+                      >
+                        {item}
+                      </a>
+                    </Link>
                   )
                 )}
               </div>
@@ -170,8 +172,8 @@ export default function Layout({ children, title }) {
                 <div className="mt-3 px-2 space-y-1">
                   {profile.map((item) => (
                     <a
-                      key={item}
                       href="#"
+                      key={item}
                       className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700"
                     >
                       {item}
