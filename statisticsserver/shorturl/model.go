@@ -61,14 +61,6 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start str
 		}
 	}
 
-	docs, err := collect.OrderBy("createdAt", firestore.Asc).Documents(ctx).GetAll()
-	total := 0
-	if err != nil {
-		log.Printf("Error to GetAll: %v", err)
-	} else {
-		total = len(docs)
-	}
-
 	ret := ShortUrlPaginate{
 		Next:   data[len(data)-1].Hash,
 		Data:   data,
