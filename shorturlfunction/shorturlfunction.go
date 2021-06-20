@@ -162,6 +162,16 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 // Register set new url on redis instance when sign in
 // and return short url path
 func RegisterWithAuth(res http.ResponseWriter, req *http.Request) {
+	// Set CORS headers for the preflight request
+	if req.Method == http.MethodOptions {
+		res.Header().Set("Access-Control-Allow-Origin", "*")
+		res.Header().Set("Access-Control-Allow-Methods", "POST")
+		res.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		res.Header().Set("Access-Control-Max-Age", "3600")
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	authEmail := ""
 	// This function only execute on gcp
 	if value, exists := os.LookupEnv("ISONGCP"); exists && value == "True" {
