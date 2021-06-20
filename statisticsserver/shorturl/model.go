@@ -3,7 +3,6 @@ package shorturl
 import (
 	"context"
 	"log"
-	"math"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -19,14 +18,10 @@ type ShortUrl struct {
 }
 
 type ShortUrlPaginate struct {
-	Prev        string     `json:"prev" form:"prev"`
-	Next        string     `json:"next" form:"next"`
-	Data        []ShortUrl `json:"data" form:"data"`
-	Total       int        `json:"total" form:"total"`
-	Start       string     `json:"start" form:"start"`
-	Length      int        `json:"length" form:"length"`
-	TotalPage   int        `json:"totalPage" form:"totalPage"`
-	CurrentPage int        `json:"currentPage" form:"currentPage"`
+	Next   string     `json:"next" form:"next"`
+	Data   []ShortUrl `json:"data" form:"data"`
+	Start  string     `json:"start" form:"start"`
+	Length int        `json:"length" form:"length"`
 }
 
 type ShortUrlDetail struct {
@@ -75,13 +70,10 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start str
 	}
 
 	ret := ShortUrlPaginate{
-		Next:        data[len(data)-1].Hash,
-		Data:        data,
-		Total:       total, // FIXME
-		Start:       start,
-		Length:      length,
-		TotalPage:   int(math.Floor(float64(total)/float64(length)) + 1), // FIXME
-		CurrentPage: int(math.Floor(float64(0)/float64(length)) + 1),     // FIXME
+		Next:   data[len(data)-1].Hash,
+		Data:   data,
+		Start:  start,
+		Length: length,
 	}
 	return ret
 }
