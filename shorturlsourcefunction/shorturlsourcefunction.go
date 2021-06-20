@@ -79,12 +79,13 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store access
+	var shortHash string = record["ShortHash"].(string)
 	accessID := fmt.Sprintf("%x", getAccessId(m.Data))
 	access := map[string]interface{}{
 		"datetime":  datetime,
 		"sourceIp":  record["SourceIp"],
 		"agent":     record["Agent"],
-		"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
+		"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", shortHash)),
 	}
 	log.Printf("ShortUrlSource: access id: %v, data: %v", accessID, access)
 	if _, err := client.Collection("access").Doc(accessID).Set(ctx, access); err != nil {
@@ -96,7 +97,7 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	dateStr := fmt.Sprintf("%d/%d/%d", datetime.Year(), datetime.Month(), datetime.Day())
 	if _, err := client.Collection("daily-report").Doc(dateStr).Get(ctx); err != nil {
 		dailyReport := map[string]interface{}{
-			"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", record["ShortHash"])),
+			"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", shortHash)),
 		}
 		if _, err := client.Collection("daily-report").Doc(dateStr).Set(ctx, dailyReport); err != nil {
 			log.Printf("ShortUrlSource: init daily report to firebase error: %v", err)
@@ -112,6 +113,16 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	if _, err := client.Collection("daily-report").Doc(dateStr).Update(ctx, countDailyReport); err != nil {
 		log.Printf("ShortUrlSource: update daily report from firebase error: %v", err)
 		return errors.New(fmt.Sprintf("ShortUrlSource: update daily report from firebase error: %v", err))
+	}
+
+	// update short url count
+	countShortUrl := []firestore.Update{
+		{Path: "count", Value: firestore.Increment(1)},
+	}
+	log.Printf("ShortUrlSource: shortHASH: %v update count", shortHash)
+	if _, err := client.Collection("short-url-map").Doc(shortHash).Update(ctx, countShortUrl); err != nil {
+		log.Printf("ShortUrlSource: update update short url count from firebase error: %v", err)
+		return errors.New(fmt.Sprintf("ShortUrlSource: update short url count from firebase error: %v", err))
 	}
 	return nil
 }
