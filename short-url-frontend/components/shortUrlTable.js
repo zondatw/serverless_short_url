@@ -1,3 +1,4 @@
+import Link from 'next/link'
 
 /* Reference: https://tailwindui.com/components/application-ui/lists/tables */
 export default function ShortUrlTable({ data }) {
@@ -30,7 +31,7 @@ export default function ShortUrlTable({ data }) {
                   Type
                 </th>
                 <th key="titleDetail" scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">Detail</span>
                 </th>
               </tr>
             </thead>
@@ -51,9 +52,11 @@ export default function ShortUrlTable({ data }) {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="#" className="text-indigo-600 hover:text-indigo-900">
-                      Detail
-                    </a>
+                    <Link href={`/Details/${shortUrl.hash}`}>
+                      <a href="#" className="text-indigo-600 hover:text-indigo-900">
+                        Detail
+                      </a>
+                    </Link>
                   </td>
                 </tr>
               ))}

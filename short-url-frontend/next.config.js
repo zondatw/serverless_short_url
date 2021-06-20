@@ -11,13 +11,15 @@ module.exports = (phase) => {
   if (isDev) {
     publicRuntimeConfig = {
       apiURL: process.env.apiURL || 'http://localhost/',
-      cloudFunctionUrl: process.env.cloudFunctionUrl || 'http://localhost/'
+      cloudFunctionUrl: process.env.cloudFunctionUrl || 'http://localhost/',
+      cloudInternalApiUrl: process.env.cloudInternalApiUrl || 'http://localhost/',
     }
   }
   if (isProd) {
     publicRuntimeConfig = {
       apiURL: process.env.apiURL,
-      cloudFunctionUrl: process.env.cloudFunctionUrl
+      cloudFunctionUrl: process.env.cloudFunctionUrl,
+      cloudInternalApiUrl: process.env.cloudInternalApiUrl,
     }
   }
 
