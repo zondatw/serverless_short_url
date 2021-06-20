@@ -44,7 +44,7 @@ export default function Layout({ children, title }) {
                             </Link>
                           </Fragment>
                         ) : (
-                          <Link href={item} key={item}>
+                          <Link href={`/${item}`} key={item}>
                             <a
                               className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                             >
@@ -133,14 +133,14 @@ export default function Layout({ children, title }) {
                   itemIdx === 0 ? (
                     <Fragment>
                       {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                      <Link href={item} key={item}>
+                      <Link href={`/${item}`} key={item}>
                         <a href="#" className="bg-gray-900 text-white block px-3 py-2 rounded-md text-base font-medium">
                           {item}
                         </a>
                       </Link>
                     </Fragment>
                   ) : (
-                    <Link href={item} key={item}>
+                    <Link href={`/${item}`} key={item}>
                       <a
                         href="#"
                         className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
