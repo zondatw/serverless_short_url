@@ -134,6 +134,7 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 	}
 	log.Printf("sendClientSourceToPub: original: %v", record)
 
+	log.Printf("sendClientSourceToPub: ready to codec")
 	codec, err := goavro.NewCodec(AVRO_SOURCE)
 	if err != nil {
 		log.Printf("sendClientSourceToPub: goavro.NewCodec err: %v", err)
@@ -142,18 +143,21 @@ func sendClientSourceToPub(ctx context.Context, projectID string, shortHash stri
 
 	topic := client.Topic(topicID)
 
+	log.Printf("sendClientSourceToPub: ready to codec.TextualFromNative")
 	msg, err := codec.TextualFromNative(nil, record)
 	if err != nil {
 		log.Printf("sendClientSourceToPub: codec.TextualFromNative err: %v", err)
 		return
 	}
 
+	log.Printf("sendClientSourceToPub: ready to publish")
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data: msg,
 	})
+	log.Printf("sendClientSourceToPub: ready to get response")
 	id, err := result.Get(ctx)
 	if err != nil {
-		log.Printf("sendClientSourceToPub err: original get: %v", err)
+		log.Printf("sendClientSourceToPub err: original get: %v, msg: %v", err, msg)
 		return
 	}
 	log.Printf("sendClientSourceToPub: Published message with custom attributes; msg ID: %v\n", id)
@@ -273,6 +277,7 @@ func RegisterBase(res http.ResponseWriter, req *http.Request, fromAuth bool, aut
 			"createdAt": time.Now(),
 			"target":    rg.Url,
 			"type":      "url",
+			"count":     0,
 		}
 
 		if fromAuth {
