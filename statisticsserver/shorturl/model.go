@@ -26,6 +26,7 @@ type ShortUrlPaginate struct {
 
 type ShortUrlDetail struct {
 	Target    string    `json:"target" form:"target"`
+	Count     int       `json:"count" form:"count"`
 	Type      string    `json:"type" form:"type"`
 	Owner     string    `json:"owner,omitempty" form:"owner,omitempty"`
 	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
