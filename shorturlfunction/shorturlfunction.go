@@ -278,6 +278,7 @@ func RegisterBase(res http.ResponseWriter, req *http.Request, fromAuth bool, aut
 			"target":    rg.Url,
 			"type":      "url",
 			"count":     0,
+			"owner":     "",
 		}
 
 		if fromAuth {
