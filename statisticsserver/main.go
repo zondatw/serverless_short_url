@@ -8,6 +8,7 @@ import (
 	"os"
 
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/auth"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
 )
@@ -23,6 +24,7 @@ func main() {
 	// Use a service account
 	ctx := context.Background()
 	var app *firebase.App
+	var auth *auth.Client
 	var err error
 	if projectID, ok := os.LookupEnv("projectID"); ok {
 		fmt.Printf("On GCP: %v\n", projectID)
@@ -37,6 +39,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	if auth, err = app.Auth(ctx); err != nil {
+		log.Fatalln(err)
+	}
+
 	client, err := app.Firestore(ctx)
 	if err != nil {
 		log.Fatalln(err)
@@ -47,7 +53,7 @@ func main() {
 	router = gin.Default()
 	router.GET("/", health)
 	router.GET("/health", health)
-	initRoute(ctx, client)
+	initRoute(ctx, client, auth)
 	router.Run(urlSetting)
 }
 

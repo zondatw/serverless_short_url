@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"cloud.google.com/go/firestore"
+	"firebase.google.com/go/auth"
 	"github.com/gin-gonic/gin"
 )
 
-func Route(ctx context.Context, api *gin.RouterGroup, client *firestore.Client) {
-	sS := shorturlService{ctx: ctx, client: client}
+func Route(ctx context.Context, api *gin.RouterGroup, client *firestore.Client, auth *auth.Client) {
+	sS := shorturlService{ctx: ctx, client: client, auth: auth}
 
 	shorturlRoute := api.Group("/shorturl")
 	{

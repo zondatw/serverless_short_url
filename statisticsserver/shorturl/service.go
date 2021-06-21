@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/firestore"
+	"firebase.google.com/go/auth"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +18,7 @@ type Service interface {
 type shorturlService struct {
 	ctx    context.Context
 	client *firestore.Client
+	auth   *auth.Client
 }
 
 type GetAllParam struct {
@@ -24,14 +26,35 @@ type GetAllParam struct {
 	Length int    `form:"length"`
 }
 
+//checkAuth Check ID token
+func checkAuth(ctx context.Context, auth *auth.Client, idToken string) (*auth.Token, error) {
+	token, err := auth.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
 func (service *shorturlService) GetAll(context *gin.Context) {
+	authEmail := ""
+	if value := context.GetHeader("Authorization"); value != "" {
+		token, err := checkAuth(service.ctx, service.auth, value)
+		if err != nil {
+			log.Printf("check auth error: %v", err)
+			context.JSON(http.StatusUnauthorized, gin.H{"error": "Auth token error"})
+			return
+		}
+		authEmail = token.Claims["email"].(string)
+	}
+
 	var param GetAllParam
 	context.Bind(&param)
-	log.Printf("Start %d, Length %d", param.Start, param.Length)
+	log.Printf("Start %s, Length %d", param.Start, param.Length)
+
 	if param.Length <= 0 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Length can't less than 1"})
 	} else {
-		context.JSON(http.StatusOK, getAllShortUrlList(service.ctx, service.client, param.Start, param.Length))
+		context.JSON(http.StatusOK, getAllShortUrlList(service.ctx, service.client, authEmail, param.Start, param.Length))
 	}
 }
 

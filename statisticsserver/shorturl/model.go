@@ -32,9 +32,9 @@ type ShortUrlDetail struct {
 	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
 }
 
-func getAllShortUrlList(ctx context.Context, client *firestore.Client, start string, length int) ShortUrlPaginate {
+func getAllShortUrlList(ctx context.Context, client *firestore.Client, authEmail string, start string, length int) ShortUrlPaginate {
 	var data []ShortUrl = make([]ShortUrl, 0)
-	collect := client.Collection("short-url-map")
+	collect := client.Collection("short-url-map").Where("owner", "==", authEmail)
 	var iter *firestore.DocumentIterator
 	if start == "" {
 		iter = collect.OrderBy(firestore.DocumentID, firestore.Asc).Limit(length).Documents(ctx)
@@ -48,6 +48,7 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start str
 		}
 		if err != nil {
 			log.Printf("Error to iterate: %v", err)
+			break
 		}
 
 		if detail, err := getShortUrlDetail(ctx, client, doc.Ref.ID); err == nil {
@@ -62,8 +63,13 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, start str
 		}
 	}
 
+	next := ""
+	if len(data) > 0 {
+		next = data[len(data)-1].Hash
+	}
+
 	ret := ShortUrlPaginate{
-		Next:   data[len(data)-1].Hash,
+		Next:   next,
 		Data:   data,
 		Start:  start,
 		Length: length,
