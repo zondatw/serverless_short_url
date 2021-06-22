@@ -13,6 +13,7 @@ module.exports = (phase) => {
       apiURL: process.env.apiURL || 'http://localhost/',
       cloudFunctionUrl: process.env.cloudFunctionUrl || 'http://localhost/',
       cloudInternalApiUrl: process.env.cloudInternalApiUrl || 'http://localhost/',
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost/',
     }
   }
   if (isProd) {
@@ -20,6 +21,7 @@ module.exports = (phase) => {
       apiURL: process.env.apiURL,
       cloudFunctionUrl: process.env.cloudFunctionUrl,
       cloudInternalApiUrl: process.env.cloudInternalApiUrl,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     }
   }
 
