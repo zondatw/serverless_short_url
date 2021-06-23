@@ -6,7 +6,24 @@ const {
 module.exports = (phase) => {
   const isDev = phase === PHASE_DEVELOPMENT_SERVER
   const isProd = phase === PHASE_PRODUCTION_SERVER
-  var publicRuntimeConfig = {};
+  var publicRuntimeConfig = {}
+
+  async function redirects() {
+    return [
+      {
+        source: '/Login',
+        has: [
+          {
+            type: 'cookie',
+            key: 'apikey',
+          },
+        ],
+        permanent: false,
+        destination: '/',
+      },
+    ]
+  }
+
 
   if (isDev) {
     publicRuntimeConfig = {
@@ -26,6 +43,7 @@ module.exports = (phase) => {
   }
 
   return {
+    redirects: redirects,
     publicRuntimeConfig: publicRuntimeConfig,
   }
 }
