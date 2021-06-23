@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import Router from 'next/router'
 
-export default function LoginCard() {
+export default function SignInCard() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  function login() {
-    var loginApi = "/api/auth/signin"
+  function signin() {
+    var signinApi = "/api/auth/signin"
     var requestData = {
       email: email,
       password: password,
       "returnSecureToken": true,
     }
-    fetch(loginApi, {
+    fetch(signinApi, {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json'
@@ -56,9 +56,9 @@ export default function LoginCard() {
             </div>
             <div className="py-2">
               <button
-                onClick={() => login()}
+                onClick={() => signin()}
                 className="rounded-md bg-gradient-to-r from-blue-400 to-indigo-500 text-xl text-white pt-3 pb-4 px-8 inline"
-              >Login</button>
+              >Sign In</button>
             </div>
           </div>
         </div>

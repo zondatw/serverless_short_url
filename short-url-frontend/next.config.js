@@ -11,7 +11,7 @@ module.exports = (phase) => {
   async function redirects() {
     return [
       {
-        source: '/Login',
+        source: '/SignIn',
         has: [
           {
             type: 'cookie',
