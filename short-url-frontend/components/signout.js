@@ -1,10 +1,10 @@
 import Router from 'next/router'
 
-export default function LogoutCard() {
+export default function SignOutCard() {
 
-  function logout() {
-    var loginApi = "/api/auth/signout"
-    fetch(loginApi, {
+  function signout() {
+    var signoutApi = "/api/auth/signout"
+    fetch(signoutApi, {
       method: 'GET',
     }).then((response) => {
       return response.json()
@@ -26,9 +26,9 @@ export default function LogoutCard() {
             </div>
             <div className="py-2">
               <button
-                onClick={() => logout()}
+                onClick={() => signout()}
                 className="rounded-md bg-gradient-to-r from-blue-400 to-indigo-500 text-xl text-white pt-3 pb-4 px-8 inline"
-              >Logout</button>
+              >Sign Out</button>
             </div>
           </div>
         </div>
