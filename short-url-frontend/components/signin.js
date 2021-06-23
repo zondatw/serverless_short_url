@@ -34,7 +34,7 @@ export default function SignInCard() {
         <div className="flex flex-wrapbg-white py-8 px-10 text-left rounded-md shadow-lg max-w-sm mx-auto">
           <div className="flex flex-col">
             <div className="py-2">
-              <h1 className="text-4xl font-black mb-4">Login</h1>
+              <h1 className="text-4xl font-black mb-4">Sign In</h1>
             </div>
             <div className="py-2">
               <input
