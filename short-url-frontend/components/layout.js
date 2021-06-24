@@ -2,10 +2,11 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { Fragment } from 'react'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
-import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline'
+import { BellIcon, MenuIcon, XIcon, AdjustmentsIcon } from '@heroicons/react/outline'
+import { useAuthContext } from "../context/auth"
 
 const navigation = ['Home', 'Dashboard', 'Register']
-const profile = ['Your Profile', 'Settings', 'Sign out']
+const profile = ['Your Profile', 'Sign In', 'Sign out']
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -13,6 +14,7 @@ function classNames(...classes) {
 
 /* Reference https://tailwindui.com/components/application-ui/application-shells/stacked */
 export default function Layout({ children, title }) {
+  const {isSignIn} = useAuthContext()
   return (
     <div key="layout">
       <Head>
@@ -64,17 +66,13 @@ export default function Layout({ children, title }) {
                     </button>
 
                     {/* Profile dropdown */}
-                    {/* <Menu as="div" className="ml-3 relative">
+                    <Menu as="div" className="ml-3 relative">
                       {({ open }) => (
                         <>
                           <div>
-                            <Menu.Button className="max-w-xs bg-gray-800 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                            <Menu.Button className="max-w-xs text-gray-400 bg-gray-800 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                               <span className="sr-only">Open user menu</span>
-                              <img
-                                className="h-8 w-8 rounded-full"
-                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                alt=""
-                              />
+                              <AdjustmentsIcon className="h-6 w-6" aria-hidden="true" />
                             </Menu.Button>
                           </div>
                           <Transition
@@ -91,26 +89,32 @@ export default function Layout({ children, title }) {
                               static
                               className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                             >
-                              {profile.map((item) => (
-                                <Menu.Item key={item}>
-                                  {({ active }) => (
+                              {isSignIn()?
+                                <Menu.Item key="SignOut">
+                                  <Link href={`/SignOut`} key='SignOut'>
                                     <a
-                                      href="#"
-                                      className={classNames(
-                                        active ? 'bg-gray-100' : '',
-                                        'block px-4 py-2 text-sm text-gray-700'
-                                      )}
+                                      className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
                                     >
-                                      {item}
+                                      Sign Out
                                     </a>
-                                  )}
+                                  </Link>
                                 </Menu.Item>
-                              ))}
+                                :
+                                <Menu.Item key="SignIn">
+                                  <Link href={`/SignIn`} key='SignIn'>
+                                    <a
+                                      className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                                    >
+                                      Sign In
+                                    </a>
+                                  </Link>
+                                </Menu.Item>
+                              }
                             </Menu.Items>
                           </Transition>
                         </>
                       )}
-                    </Menu> */}
+                    </Menu>
                   </div>
                 </div>
                 <div className="-mr-2 flex md:hidden">
