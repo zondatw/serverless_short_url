@@ -17,6 +17,7 @@ Variables
 * apiURL: backend api url base
 * cloudFunctionUrl: cloud function api url base
 * cloudInternalApiUrl: internal api url base
+* NEXTAUTH_URL: sign-in api url
 
 ## Reference
 
