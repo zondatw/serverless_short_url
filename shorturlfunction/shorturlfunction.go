@@ -195,6 +195,8 @@ func RegisterWithAuth(res http.ResponseWriter, req *http.Request) {
 		}
 		authEmail = token.Claims["email"].(string)
 	}
+
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	RegisterBase(res, req, true, authEmail)
 }
 
