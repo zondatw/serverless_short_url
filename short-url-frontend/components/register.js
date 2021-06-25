@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function RegisterCard({ apiURL }) {
+export default function RegisterCard({ apiURL, apikey }) {
   const [url, setUrl] = useState('');
   const [shortUrl, setShortUrl] = useState('');
 
@@ -13,11 +13,19 @@ export default function RegisterCard({ apiURL }) {
     var requestData = {
       url: url
     }
-    fetch(apiUrl + "Register", {
+    var registerApiUrl = apiURL + "Register"
+    var headers = {
+      'Content-Type': 'application/json'
+    }
+    if (apikey !== "") {
+      registerApiUrl = apiURL + "RegisterWithAuth"
+      headers['Authorization'] = apikey
+    }
+
+
+    fetch(registerApiUrl, {
       method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json'
-      }),
+      headers: new Headers(headers),
       body: JSON.stringify(requestData),
     }).then((response) => {
       console.log(response)
