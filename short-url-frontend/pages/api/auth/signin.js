@@ -6,6 +6,7 @@ export default async (req, res) => {
     const requestData = {
       email: req["body"]["email"],
       password: req["body"]["password"],
+      returnSecureToken: true,
     }
     const response = await fetch(process.env.NEXTAUTH_URL, {
       method: 'POST',
