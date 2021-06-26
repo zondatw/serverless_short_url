@@ -94,12 +94,12 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// create daily report doc when it not exist
-	dateStr := fmt.Sprintf("%d/%d/%d", datetime.Year(), datetime.Month(), datetime.Day())
-	if _, err := client.Collection("daily-report").Doc(dateStr).Get(ctx); err != nil {
+	if _, err := client.Collection("daily-report").Doc(shortHash).Get(ctx); err != nil {
 		dailyReport := map[string]interface{}{
 			"shortHash": client.Doc(fmt.Sprintf("short-url-map/%s", shortHash)),
+			"datetime":  datetime,
 		}
-		if _, err := client.Collection("daily-report").Doc(dateStr).Set(ctx, dailyReport); err != nil {
+		if _, err := client.Collection("daily-report").Doc(shortHash).Set(ctx, dailyReport); err != nil {
 			log.Printf("ShortUrlSource: init daily report to firebase error: %v", err)
 			return errors.New(fmt.Sprintf("ShortUrlSource: init daily report  to firebase error: %v", err))
 		}
@@ -109,8 +109,8 @@ func ShortUrlSource(ctx context.Context, m PubSubMessage) error {
 	countDailyReport := []firestore.Update{
 		{Path: "count", Value: firestore.Increment(1)},
 	}
-	log.Printf("ShortUrlSource: date: %v, report: %v", dateStr, countDailyReport)
-	if _, err := client.Collection("daily-report").Doc(dateStr).Update(ctx, countDailyReport); err != nil {
+	log.Printf("ShortUrlSource: datetime: %v, report: %v", datetime, countDailyReport)
+	if _, err := client.Collection("daily-report").Doc(shortHash).Update(ctx, countDailyReport); err != nil {
 		log.Printf("ShortUrlSource: update daily report from firebase error: %v", err)
 		return errors.New(fmt.Sprintf("ShortUrlSource: update daily report from firebase error: %v", err))
 	}
