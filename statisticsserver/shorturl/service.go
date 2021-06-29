@@ -26,6 +26,11 @@ type GetAllParam struct {
 	Length int    `form:"length"`
 }
 
+type GetReportParam struct {
+	Year  int `form:"year"`
+	Month int `form:"month"`
+}
+
 //checkAuth Check ID token
 func checkAuth(ctx context.Context, auth *auth.Client, idToken string) (*auth.Token, error) {
 	token, err := auth.VerifyIDToken(ctx, idToken)
@@ -65,5 +70,19 @@ func (service *shorturlService) Get(context *gin.Context) {
 		context.JSON(http.StatusOK, shortUrlDetail)
 	} else {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+}
+
+func (service *shorturlService) GetReport(context *gin.Context) {
+	hash := context.Param("hash")
+
+	var param GetReportParam
+	context.Bind(&param)
+	log.Printf("Year %d, Month %d", param.Year, param.Month)
+
+	if param.Year <= 0 || param.Month < 1 || param.Month > 12 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Year must be greater than 1 or Month must be in range between 1 ~ 12"})
+	} else {
+		context.JSON(http.StatusOK, getShortUrlReport(service.ctx, service.client, hash, param.Year, param.Month))
 	}
 }

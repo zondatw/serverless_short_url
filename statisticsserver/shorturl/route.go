@@ -11,6 +11,7 @@ import (
 func Route(ctx context.Context, api *gin.RouterGroup, client *firestore.Client, auth *auth.Client) {
 	sS := shorturlService{ctx: ctx, client: client, auth: auth}
 
+	api.GET("/shorturlreport/:hash", sS.GetReport)
 	shorturlRoute := api.Group("/shorturl")
 	{
 		shorturlRoute.GET("/", sS.GetAll)

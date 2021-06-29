@@ -2,6 +2,7 @@ package shorturl
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -15,6 +16,18 @@ type ShortUrl struct {
 	Target    string    `json:"target" form:"target"`
 	Type      string    `json:"type" form:"type"`
 	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
+}
+
+type shortUrlReport struct {
+	Year  int                   `json:"year" form:"year"`
+	Month int                   `json:"month" form:"month"`
+	Dates []ShortUrlDailyReport `json:"dates" form:"dates"`
+}
+
+type ShortUrlDailyReport struct {
+	Hash  string `json:"hash" form:"hash"`
+	Count int64  `json:"count" form:"count"`
+	Date  string `json:"date" form:"date"`
 }
 
 type ShortUrlPaginate struct {
@@ -89,4 +102,49 @@ func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHa
 		return shortUrlDetail, err
 	}
 	return shortUrlDetail, nil
+}
+
+func getShortUrlReport(ctx context.Context, client *firestore.Client, shortUrlHash string, year int, month int) shortUrlReport {
+	var dates []ShortUrlDailyReport = make([]ShortUrlDailyReport, 0)
+
+	// Init dates
+	firstDay := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	lastDay := firstDay.AddDate(0, 1, 0).Add(-time.Nanosecond)
+	log.Printf("Day range: %v ~ %v", firstDay, lastDay)
+	for day := firstDay.Day(); day <= lastDay.Day(); day++ {
+		dates = append(dates, ShortUrlDailyReport{
+			Hash:  shortUrlHash,
+			Count: 0,
+			Date:  fmt.Sprintf("%d-%d-%d", year, month, day),
+		})
+	}
+
+	collect := client.Collection("daily-report")
+	var iter *firestore.DocumentIterator
+	iter = collect.
+		Where("shortHash", "==", client.Doc(fmt.Sprintf("short-url-map/%s", shortUrlHash))).
+		Where("datetime", ">=", firstDay).
+		Where("datetime", "<=", lastDay).
+		OrderBy("datetime", firestore.Asc).
+		Documents(ctx)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Printf("Error to iterate: %v", err)
+			break
+		}
+		data := doc.Data()
+		index := data["datetime"].(time.Time).Day() - 1
+		dates[index].Count = data["count"].(int64)
+	}
+
+	ret := shortUrlReport{
+		Year:  year,
+		Month: month,
+		Dates: dates,
+	}
+	return ret
 }
