@@ -73,7 +73,7 @@ func (service *shorturlService) Get(context *gin.Context) {
 	}
 }
 
-func (service *shorturlService) GetReport(context *gin.Context) {
+func (service *shorturlService) GetDailyReport(context *gin.Context) {
 	hash := context.Param("hash")
 
 	var param GetReportParam
@@ -83,6 +83,6 @@ func (service *shorturlService) GetReport(context *gin.Context) {
 	if param.Year <= 0 || param.Month < 1 || param.Month > 12 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Year must be greater than 1 or Month must be in range between 1 ~ 12"})
 	} else {
-		context.JSON(http.StatusOK, getShortUrlReport(service.ctx, service.client, hash, param.Year, param.Month))
+		context.JSON(http.StatusOK, getShortUrlDailyReport(service.ctx, service.client, hash, param.Year, param.Month))
 	}
 }

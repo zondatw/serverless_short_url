@@ -91,6 +91,8 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, authEmail
 }
 
 func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHash string) (ShortUrlDetail, error) {
+	// TODO: check auth
+
 	var shortUrlDetail ShortUrlDetail
 	if result, err := client.Collection("short-url-map").Doc(shortUrlHash).Get(ctx); err == nil {
 		if err := mapstructure.Decode(result.Data(), &shortUrlDetail); err != nil {
@@ -105,6 +107,8 @@ func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHa
 }
 
 func getShortUrlReport(ctx context.Context, client *firestore.Client, shortUrlHash string, year int, month int) shortUrlReport {
+	// TODO: check auth
+
 	var dates []ShortUrlDailyReport = make([]ShortUrlDailyReport, 0)
 
 	// Init dates
