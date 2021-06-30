@@ -21,17 +21,20 @@ type shorturlService struct {
 	auth   *auth.Client
 }
 
+type ErrorMsg struct {
+	Error string `json:"error" form:"v" example:"Error Message"`
+}
+
 type GetAllParam struct {
-	Start  string `form:"start"`
-	Length int    `form:"length"`
+	Start  string `form:"start" example:"0"`  // start of page
+	Length int    `form:"length" example:"5"` // length per page
 }
 
 type GetReportParam struct {
-	Year  int `form:"year"`
-	Month int `form:"month"`
+	Year  int `form:"year" example:"2021"` // year of search
+	Month int `form:"month" example:"06"`  // month of search
 }
 
-//checkAuth Check ID token
 func checkAuth(ctx context.Context, auth *auth.Client, idToken string) (*auth.Token, error) {
 	token, err := auth.VerifyIDToken(ctx, idToken)
 	if err != nil {
@@ -40,6 +43,15 @@ func checkAuth(ctx context.Context, auth *auth.Client, idToken string) (*auth.To
 	return token, nil
 }
 
+// @Summary Get all short url
+// @Tags shorturl
+// @version 1.0
+// @Description Get all short url
+// @produce application/json
+// @param object query GetAllParam true "query list"
+// @Success 200 {array} ShortUrlPaginate
+// @Success 400 {object} ErrorMsg
+// @Router /api/shorturl/ [get]
 func (service *shorturlService) GetAll(context *gin.Context) {
 	authEmail := ""
 	if value := context.GetHeader("Authorization"); value != "" {
@@ -63,6 +75,15 @@ func (service *shorturlService) GetAll(context *gin.Context) {
 	}
 }
 
+// @Summary Get short url detail
+// @Tags shorturl
+// @version 1.0
+// @Description Get short url detail
+// @produce application/json
+// @param hash path string true "hash"
+// @Success 200 {object} ShortUrlDetail
+// @Success 400 {object} ErrorMsg
+// @Router /api/shorturl/{hash} [get]
 func (service *shorturlService) Get(context *gin.Context) {
 	hash := context.Param("hash")
 	shortUrlDetail, err := getShortUrlDetail(service.ctx, service.client, hash)
@@ -73,6 +94,17 @@ func (service *shorturlService) Get(context *gin.Context) {
 	}
 }
 
+// @Summary Get daily report
+// @Tags shorturlreport
+// @version 1.0
+// @Description Get daily report
+// @accept application/json
+// @produce application/json
+// @param hash path string true "hash"
+// @param object query GetReportParam true "query list"
+// @Success 200 {object} shortUrlReport
+// @Success 400 {object} ErrorMsg
+// @Router /api/shorturlreport/daily/{hash} [get]
 func (service *shorturlService) GetDailyReport(context *gin.Context) {
 	hash := context.Param("hash")
 

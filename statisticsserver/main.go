@@ -10,11 +10,23 @@ import (
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/zondatw/serverless_short_url/statisticsserver/docs"
 	"google.golang.org/api/option"
 )
 
 var router *gin.Engine
 
+// @title Swagger API
+// @version 1.0
+// @description Gin swagger.
+
+// @contact.name API Support
+// @contact.url https://github.com/zondatw/serverless_short_url
+
+// @host localhost
+// schemes http
 func main() {
 	var (
 		ip   = "0.0.0.0"
@@ -54,9 +66,20 @@ func main() {
 	router.GET("/", health)
 	router.GET("/health", health)
 	initRoute(ctx, client, auth)
+
+	if mode := gin.Mode(); mode == gin.DebugMode {
+		url := ginSwagger.URL(fmt.Sprintf("http://localhost:%s/swagger/doc.json", port))
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	}
 	router.Run(urlSetting)
 }
 
+// @Summary Health
+// @Tags Base
+// @version 1.0
+// @produce text/plain
+// @Success 200 {string} json "{"status": "OK"}"
+// @Router /health [get]
 func health(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }

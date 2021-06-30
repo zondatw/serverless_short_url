@@ -12,37 +12,37 @@ import (
 )
 
 type ShortUrl struct {
-	Hash      string    `json:"hash" form:"hash"`
-	Target    string    `json:"target" form:"target"`
-	Type      string    `json:"type" form:"type"`
-	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
+	Hash      string    `json:"hash" form:"hash" example:"XXXXXX"`
+	Target    string    `json:"target" form:"target" example:"http://localhost/"`
+	Type      string    `json:"type" form:"type" example:"url"`
+	CreatedAt time.Time `json:"createdAt" form:"createdAt" example:"2021-06-26T13:14:47.15739Z"`
 }
 
 type shortUrlReport struct {
-	Year  int                   `json:"year" form:"year"`
-	Month int                   `json:"month" form:"month"`
+	Year  int                   `json:"year" form:"year" example:"2021"`
+	Month int                   `json:"month" form:"month" example:"06"`
 	Dates []ShortUrlDailyReport `json:"dates" form:"dates"`
 }
 
 type ShortUrlDailyReport struct {
-	Hash  string `json:"hash" form:"hash"`
-	Count int64  `json:"count" form:"count"`
-	Date  string `json:"date" form:"date"`
+	Hash  string `json:"hash" form:"hash" example:"XXXXXX"`
+	Count int64  `json:"count" form:"count" example:"30"`
+	Date  string `json:"date" form:"date" example:"2021-6-30"`
 }
 
 type ShortUrlPaginate struct {
-	Next   string     `json:"next" form:"next"`
+	Next   string     `json:"next" form:"next" example:"OOOOOO"`
 	Data   []ShortUrl `json:"data" form:"data"`
-	Start  string     `json:"start" form:"start"`
-	Length int        `json:"length" form:"length"`
+	Start  string     `json:"start" form:"start" example:"0"`
+	Length int        `json:"length" form:"length" example:"5"`
 }
 
 type ShortUrlDetail struct {
-	Target    string    `json:"target" form:"target"`
-	Count     int       `json:"count" form:"count"`
-	Type      string    `json:"type" form:"type"`
-	Owner     string    `json:"owner,omitempty" form:"owner,omitempty"`
-	CreatedAt time.Time `json:"createdAt" form:"createdAt"`
+	Target    string    `json:"target" form:"target" example:"http://localhost/"`
+	Count     int       `json:"count" form:"count" example:"30"`
+	Type      string    `json:"type" form:"type" example:"url"`
+	Owner     string    `json:"owner,omitempty" form:"owner,omitempty" example:"test@test.org"`
+	CreatedAt time.Time `json:"createdAt" form:"createdAt" example:"2021-06-26T13:14:47.15739Z"`
 }
 
 func getAllShortUrlList(ctx context.Context, client *firestore.Client, authEmail string, start string, length int) ShortUrlPaginate {

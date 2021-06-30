@@ -1,0 +1,191 @@
+definitions:
+  shorturl.ErrorMsg:
+    properties:
+      error:
+        example: Error Message
+        type: string
+    type: object
+  shorturl.ShortUrl:
+    properties:
+      createdAt:
+        example: "2021-06-26T13:14:47.15739Z"
+        type: string
+      hash:
+        example: XXXXXX
+        type: string
+      target:
+        example: http://localhost/
+        type: string
+      type:
+        example: url
+        type: string
+    type: object
+  shorturl.ShortUrlDailyReport:
+    properties:
+      count:
+        example: 30
+        type: integer
+      date:
+        example: "2021-6-30"
+        type: string
+      hash:
+        example: XXXXXX
+        type: string
+    type: object
+  shorturl.ShortUrlDetail:
+    properties:
+      count:
+        example: 30
+        type: integer
+      createdAt:
+        example: "2021-06-26T13:14:47.15739Z"
+        type: string
+      owner:
+        example: test@test.org
+        type: string
+      target:
+        example: http://localhost/
+        type: string
+      type:
+        example: url
+        type: string
+    type: object
+  shorturl.ShortUrlPaginate:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/shorturl.ShortUrl'
+        type: array
+      length:
+        example: 5
+        type: integer
+      next:
+        example: OOOOOO
+        type: string
+      start:
+        example: "0"
+        type: string
+    type: object
+  shorturl.shortUrlReport:
+    properties:
+      dates:
+        items:
+          $ref: '#/definitions/shorturl.ShortUrlDailyReport'
+        type: array
+      month:
+        example: 6
+        type: integer
+      year:
+        example: 2021
+        type: integer
+    type: object
+host: localhost
+info:
+  contact:
+    name: API Support
+    url: https://github.com/zondatw/serverless_short_url
+  description: Gin swagger.
+  title: Swagger API
+  version: "1.0"
+paths:
+  /api/shorturl/:
+    get:
+      description: Get all short url
+      parameters:
+      - description: length per page
+        example: 5
+        in: query
+        name: length
+        type: integer
+      - description: start of page
+        example: "0"
+        in: query
+        name: start
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/shorturl.ShortUrlPaginate'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shorturl.ErrorMsg'
+      summary: Get all short url
+      tags:
+      - shorturl
+  /api/shorturl/{hash}:
+    get:
+      description: Get short url detail
+      parameters:
+      - description: hash
+        in: path
+        name: hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shorturl.ShortUrlDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shorturl.ErrorMsg'
+      summary: Get short url detail
+      tags:
+      - shorturl
+  /api/shorturlreport/daily/{hash}:
+    get:
+      consumes:
+      - application/json
+      description: Get daily report
+      parameters:
+      - description: hash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: month of search
+        example: 6
+        in: query
+        name: month
+        type: integer
+      - description: year of search
+        example: 2021
+        in: query
+        name: year
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shorturl.shortUrlReport'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shorturl.ErrorMsg'
+      summary: Get daily report
+      tags:
+      - shorturlreport
+  /health:
+    get:
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: '{"status": "OK"}'
+          schema:
+            type: string
+      summary: Health
+      tags:
+      - Base
+swagger: "2.0"
