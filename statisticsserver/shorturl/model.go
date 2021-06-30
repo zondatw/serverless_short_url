@@ -106,7 +106,7 @@ func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHa
 	return shortUrlDetail, nil
 }
 
-func getShortUrlReport(ctx context.Context, client *firestore.Client, shortUrlHash string, year int, month int) shortUrlReport {
+func getShortUrlDailyReport(ctx context.Context, client *firestore.Client, shortUrlHash string, year int, month int) shortUrlReport {
 	// TODO: check auth
 
 	var dates []ShortUrlDailyReport = make([]ShortUrlDailyReport, 0)
