@@ -15,6 +15,8 @@ EXPOSE 5000
 
 FROM debian
 
+ENV GIN_MODE=release
+
 RUN apt update && apt upgrade -y
 RUN apt install -y ca-certificates
 
