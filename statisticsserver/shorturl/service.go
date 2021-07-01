@@ -2,6 +2,7 @@ package shorturl
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 
@@ -43,6 +44,19 @@ func checkAuth(ctx context.Context, auth *auth.Client, idToken string) (*auth.To
 	return token, nil
 }
 
+func getAuthEmail(context *gin.Context, serviceContext context.Context, auth *auth.Client) (string, error) {
+	authEmail := ""
+	if value := context.GetHeader("Authorization"); value != "" {
+		token, err := checkAuth(serviceContext, auth, value)
+		if err != nil {
+			log.Printf("check auth error: %v", err)
+			return "", errors.New("Auth token error")
+		}
+		authEmail = token.Claims["email"].(string)
+	}
+	return authEmail, nil
+}
+
 // @Summary Get all short url
 // @Tags shorturl
 // @version 1.0
@@ -54,14 +68,10 @@ func checkAuth(ctx context.Context, auth *auth.Client, idToken string) (*auth.To
 // @Router /api/shorturl/ [get]
 func (service *shorturlService) GetAll(context *gin.Context) {
 	authEmail := ""
-	if value := context.GetHeader("Authorization"); value != "" {
-		token, err := checkAuth(service.ctx, service.auth, value)
-		if err != nil {
-			log.Printf("check auth error: %v", err)
-			context.JSON(http.StatusUnauthorized, gin.H{"error": "Auth token error"})
-			return
-		}
-		authEmail = token.Claims["email"].(string)
+	if value, err := getAuthEmail(context, service.ctx, service.auth); err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+	} else {
+		authEmail = value
 	}
 
 	var param GetAllParam
@@ -85,8 +95,15 @@ func (service *shorturlService) GetAll(context *gin.Context) {
 // @Success 400 {object} ErrorMsg
 // @Router /api/shorturl/{hash} [get]
 func (service *shorturlService) Get(context *gin.Context) {
+	authEmail := ""
+	if value, err := getAuthEmail(context, service.ctx, service.auth); err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+	} else {
+		authEmail = value
+	}
+
 	hash := context.Param("hash")
-	shortUrlDetail, err := getShortUrlDetail(service.ctx, service.client, hash)
+	shortUrlDetail, err := getShortUrlDetail(service.ctx, service.client, authEmail, hash)
 	if err == nil {
 		context.JSON(http.StatusOK, shortUrlDetail)
 	} else {

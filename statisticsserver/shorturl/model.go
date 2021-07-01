@@ -2,6 +2,7 @@ package shorturl
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -64,7 +65,7 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, authEmail
 			break
 		}
 
-		if detail, err := getShortUrlDetail(ctx, client, doc.Ref.ID); err == nil {
+		if detail, err := getShortUrlDetail(ctx, client, authEmail, doc.Ref.ID); err == nil {
 			data = append(data, ShortUrl{
 				Hash:      doc.Ref.ID,
 				Target:    detail.Target,
@@ -90,9 +91,7 @@ func getAllShortUrlList(ctx context.Context, client *firestore.Client, authEmail
 	return ret
 }
 
-func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHash string) (ShortUrlDetail, error) {
-	// TODO: check auth
-
+func getShortUrlDetail(ctx context.Context, client *firestore.Client, authEmail string, shortUrlHash string) (ShortUrlDetail, error) {
 	var shortUrlDetail ShortUrlDetail
 	if result, err := client.Collection("short-url-map").Doc(shortUrlHash).Get(ctx); err == nil {
 		if err := mapstructure.Decode(result.Data(), &shortUrlDetail); err != nil {
@@ -102,6 +101,11 @@ func getShortUrlDetail(ctx context.Context, client *firestore.Client, shortUrlHa
 	} else {
 		log.Printf("Error: %v\n", err)
 		return shortUrlDetail, err
+	}
+
+	if shortUrlDetail.Owner != authEmail {
+		log.Printf("Error: %v: url owner %s, current user: %s\n", "Owner not match", shortUrlDetail.Owner, authEmail)
+		return shortUrlDetail, errors.New("Owner not match")
 	}
 	return shortUrlDetail, nil
 }
