@@ -123,6 +123,13 @@ func (service *shorturlService) Get(context *gin.Context) {
 // @Success 400 {object} ErrorMsg
 // @Router /api/shorturlreport/daily/{hash} [get]
 func (service *shorturlService) GetDailyReport(context *gin.Context) {
+	authEmail := ""
+	if value, err := getAuthEmail(context, service.ctx, service.auth); err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+	} else {
+		authEmail = value
+	}
+
 	hash := context.Param("hash")
 
 	var param GetReportParam
@@ -132,6 +139,6 @@ func (service *shorturlService) GetDailyReport(context *gin.Context) {
 	if param.Year <= 0 || param.Month < 1 || param.Month > 12 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Year must be greater than 1 or Month must be in range between 1 ~ 12"})
 	} else {
-		context.JSON(http.StatusOK, getShortUrlDailyReport(service.ctx, service.client, hash, param.Year, param.Month))
+		context.JSON(http.StatusOK, getShortUrlDailyReport(service.ctx, service.client, authEmail, hash, param.Year, param.Month))
 	}
 }

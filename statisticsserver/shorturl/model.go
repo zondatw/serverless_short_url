@@ -110,17 +110,24 @@ func getShortUrlDetail(ctx context.Context, client *firestore.Client, authEmail 
 	return shortUrlDetail, nil
 }
 
-func getShortUrlDailyReport(ctx context.Context, client *firestore.Client, shortUrlHash string, year int, month int) shortUrlReport {
-	// TODO: check auth
-
+func getShortUrlDailyReport(ctx context.Context, client *firestore.Client, authEmail string, shortUrlHash string, year int, month int) shortUrlReport {
 	var dates []ShortUrlDailyReport = make([]ShortUrlDailyReport, 0)
+	ret := shortUrlReport{
+		Year:  year,
+		Month: month,
+		Dates: dates,
+	}
+
+	if _, err := getShortUrlDetail(ctx, client, authEmail, shortUrlHash); err != nil {
+		return ret
+	}
 
 	// Init dates
 	firstDay := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	lastDay := firstDay.AddDate(0, 1, 0).Add(-time.Nanosecond)
 	log.Printf("Day range: %v ~ %v", firstDay, lastDay)
 	for day := firstDay.Day(); day <= lastDay.Day(); day++ {
-		dates = append(dates, ShortUrlDailyReport{
+		ret.Dates = append(ret.Dates, ShortUrlDailyReport{
 			Hash:  shortUrlHash,
 			Count: 0,
 			Date:  fmt.Sprintf("%d-%d-%d", year, month, day),
@@ -146,13 +153,8 @@ func getShortUrlDailyReport(ctx context.Context, client *firestore.Client, short
 		}
 		data := doc.Data()
 		index := data["datetime"].(time.Time).Day() - 1
-		dates[index].Count = data["count"].(int64)
+		ret.Dates[index].Count = data["count"].(int64)
 	}
 
-	ret := shortUrlReport{
-		Year:  year,
-		Month: month,
-		Dates: dates,
-	}
 	return ret
 }
