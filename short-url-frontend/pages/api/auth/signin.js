@@ -18,7 +18,8 @@ export default async (req, res) => {
     const jsonData = await response.json()
     // Set a cookie
     cookies.set('apikey', jsonData['idToken'], {
-        httpOnly: true // true by default
+      httpOnly: true, // true by default
+      expires: new Date(Date.now() + parseInt(jsonData['expiresIn'], 10) * 1000),
     })
     res.status(200).json(jsonData)
   }
