@@ -72,7 +72,7 @@ export default function Detail({errorCode, hash, shortUrlData, isSignIn, apiURL}
     labels: labels,
     datasets: [
       {
-        label: 'My First dataset',
+        label: 'Count',
         fill: false,
         lineTension: 0.1,
         backgroundColor: 'rgba(75,192,192,0.4)',
@@ -101,7 +101,7 @@ export default function Detail({errorCode, hash, shortUrlData, isSignIn, apiURL}
         hash={hash}
         data={shortUrlData}
       />
-      <LineChart data={charData} />
+      <LineChart title="Daily report" data={charData} />
     </Layout>
   )
 }
