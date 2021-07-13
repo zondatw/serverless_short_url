@@ -1,17 +1,13 @@
 import Error from 'next/error'
 import Cookies from 'cookies'
 import getConfig from 'next/config'
-import useSWR from 'swr'
 
 import Layout from '../../components/layout'
 import { useAuthContext } from "../../context/auth"
 import ShortUrlDetail from '../../components/shorUrlDetail'
-import LineChart from '../../components/chart'
+import DailyReportLineChart from '../../components/dailyReport'
 
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig()
-
-
-const fetcher = (url, year, month, ) => fetch(url + `?year=${year}&month=${month}`).then(r => r.json());
 
 export async function getServerSideProps(context) {
   var errorCode = false
@@ -35,7 +31,7 @@ export async function getServerSideProps(context) {
 
   return {
     props: {
-      apiURL,
+      apiURL: apiURL,
       errorCode: errorCode,
       hash: hash,
       shortUrlData: data,
@@ -57,51 +53,13 @@ export default function Detail({errorCode, hash, shortUrlData, isSignIn, apiURL}
     authSignOut()
   }
 
-  var { data, error } = useSWR([apiURL + `api/shorturlreport/daily/${hash}`, 2021, 7], fetcher)
-
-  var labels = []
-  var counts = []
-  if (data) {
-    data["dates"].forEach(dailyData => {
-      labels.push(dailyData["date"])
-      counts.push(dailyData["count"])
-    })
-  }
-
-  var charData  = {
-    labels: labels,
-    datasets: [
-      {
-        label: 'Count',
-        fill: false,
-        lineTension: 0.1,
-        backgroundColor: 'rgba(75,192,192,0.4)',
-        borderColor: 'rgba(75,192,192,1)',
-        borderCapStyle: 'butt',
-        borderDash: [],
-        borderDashOffset: 0.0,
-        borderJoinStyle: 'miter',
-        pointBorderColor: 'rgba(75,192,192,1)',
-        pointBackgroundColor: '#fff',
-        pointBorderWidth: 1,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: 'rgba(75,192,192,1)',
-        pointHoverBorderColor: 'rgba(220,220,220,1)',
-        pointHoverBorderWidth: 2,
-        pointRadius: 1,
-        pointHitRadius: 10,
-        data: counts
-      }
-    ]
-  };
-
   return (
     <Layout title={`Detail ${hash}`}>
       <ShortUrlDetail
         hash={hash}
         data={shortUrlData}
       />
-      <LineChart title="Daily report" data={charData} />
+      <DailyReportLineChart title="Daily report" apiUrl={apiURL} hash={hash} />
     </Layout>
   )
 }
