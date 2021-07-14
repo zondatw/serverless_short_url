@@ -9,7 +9,7 @@ export default function Select({className, title, selectName, options, setOption
           id={selectName}
           name={selectName}
           className="focus:ring-indigo-500 focus:border-indigo-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md"
-          value={defaultValue}
+          defaultValue={defaultValue}
           onChange={e => handleSelectChange(e)}
         >
           { Object.entries(options).map(([key, value], i) => <option key={i} value={value}>{key}</option>) }
