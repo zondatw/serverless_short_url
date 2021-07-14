@@ -1,11 +1,28 @@
 import useSWR from 'swr'
+import { useState } from 'react';
 
 import LineChart from "./chart"
+import Select from "./select"
 
 const fetcher = (url, year, month, ) => fetch(url + `?year=${year}&month=${month}`).then(r => r.json())
 
 export default function DailyReportLineChart({title, apiUrl, hash}) {
-  var { data, error } = useSWR([apiUrl + `api/shorturlreport/daily/${hash}`, 2021, 7], fetcher)
+  const currentTime = new Date()
+  const currentYear = currentTime.getFullYear()
+  const currentMonth = currentTime.getMonth() + 1
+  const [year, setYear] = useState(currentYear)
+  const [month, setMonth] = useState(currentMonth)
+  var { data, error } = useSWR([apiUrl + `api/shorturlreport/daily/${hash}`, year, month], fetcher)
+
+  var monthOptions = {}
+  for (let month = 1; month <= 12; month += 1) {
+    monthOptions[month] = month
+  }
+
+  var yearOptions = {}
+  for (let year = 1911; year <= currentYear; year += 1) {
+    yearOptions[year] = year
+  }
 
   var labels = []
   var counts = []
@@ -13,8 +30,6 @@ export default function DailyReportLineChart({title, apiUrl, hash}) {
     data["dates"].forEach(dailyData => {
       labels.push(dailyData["date"])
       counts.push(dailyData["count"])
-      console.log(labels)
-      console.log(counts)
     })
   }
 
@@ -51,6 +66,24 @@ export default function DailyReportLineChart({title, apiUrl, hash}) {
         <div className="flex flex-wrapbg-white py-8 px-10 rounded-md shadow-md max-w-4xl mx-auto">
           <div className="flex flex-col">
             <h2>{title}</h2>
+            <div className="flex justify-end">
+              <Select
+                className="flex"
+                title="Year"
+                selectName="year"
+                options={yearOptions}
+                setOption={setYear}
+                defaultValue={currentYear}
+              />
+              <Select
+                className="flex"
+                title="Month"
+                selectName="month"
+                options={monthOptions}
+                setOption={setMonth}
+                defaultValue={currentMonth}
+              />
+            </div>
             <LineChart data={charData} />
           </div>
         </div>
