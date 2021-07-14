@@ -4,15 +4,26 @@ import { useState } from 'react';
 import LineChart from "./chart"
 import Select from "./select"
 
-const fetcher = (url, year, month, ) => fetch(url + `?year=${year}&month=${month}`).then(r => r.json())
+const authFetcher = (url, year, month, apikey) => fetch(
+  url + `?year=${year}&month=${month}`, {
+  headers: {'Authorization': apikey},
+}).then(r => r.json())
 
-export default function DailyReportLineChart({title, apiUrl, hash}) {
+const fetcher = (url, year, month) => fetch(url + `?year=${year}&month=${month}`).then(r => r.json())
+
+export default function DailyReportLineChart({title, apiUrl, apikey, hash}) {
   const currentTime = new Date()
   const currentYear = currentTime.getFullYear()
   const currentMonth = currentTime.getMonth() + 1
   const [year, setYear] = useState(currentYear)
   const [month, setMonth] = useState(currentMonth)
-  var { data, error } = useSWR([apiUrl + `api/shorturlreport/daily/${hash}`, year, month], fetcher)
+
+  var data, error;
+  if (apikey !== "") {
+    var { data, error } = useSWR([apiUrl + `api/shorturlreport/daily/${hash}`, year, month, apikey], authFetcher)
+  } else {
+    var { data, error } = useSWR([apiUrl + `api/shorturlreport/daily/${hash}`, year, month], fetcher)
+  }
 
   var monthOptions = {}
   for (let month = 1; month <= 12; month += 1) {

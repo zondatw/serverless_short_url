@@ -32,6 +32,7 @@ export async function getServerSideProps(context) {
   return {
     props: {
       apiURL: apiURL,
+      apikey: apikey,
       errorCode: errorCode,
       hash: hash,
       shortUrlData: data,
@@ -41,7 +42,7 @@ export async function getServerSideProps(context) {
 }
 
 
-export default function Detail({errorCode, hash, shortUrlData, isSignIn, apiURL}) {
+export default function Detail({errorCode, hash, shortUrlData, isSignIn, apiURL, apikey}) {
   if (errorCode) {
     return <Error statusCode={errorCode} />
   }
@@ -59,7 +60,7 @@ export default function Detail({errorCode, hash, shortUrlData, isSignIn, apiURL}
         hash={hash}
         data={shortUrlData}
       />
-      <DailyReportLineChart title="Daily report" apiUrl={apiURL} hash={hash} />
+      <DailyReportLineChart title="Daily report" apiUrl={apiURL} apikey={apikey} hash={hash} />
     </Layout>
   )
 }
